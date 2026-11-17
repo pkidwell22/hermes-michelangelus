@@ -1,0 +1,68 @@
+{
+  "name": "Michelangelus for Hermes Desktop",
+  "version": "1.1.0-dev",
+  "modes": {
+    "theme": [
+      "patrick-michelangelus"
+    ],
+    "full": [
+      "patrick-michelangelus",
+      "pm-session-details",
+      "pm-session-navigation"
+    ],
+    "media": [
+      "patrick-michelangelus",
+      "pm-session-details",
+      "pm-session-navigation",
+      "pm-radio-podcasts"
+    ]
+  },
+  "font_binaries_included": false,
+  "personal_configuration_included": false,
+  "files": {
+    "README.md": {
+      "bytes": 2496,
+      "sha256": "a4370ebdd7524ce3b546b7bab3c36b1c8da31b8dded0e3e52c889cffaee6d781"
+    },
+    "LICENSE.txt": {
+      "bytes": 1223,
+      "sha256": "00b8847f44182d0e418bf859532eda9b3473320544b8edaa94030f7658985e51"
+    },
+    "LICENSE-Hermes.txt": {
+      "bytes": 1070,
+      "sha256": "821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6"
+    },
+    "LICENSE-T3-Code.txt": {
+      "bytes": 1070,
+      "sha256": "935d8f2af0c703f9c39517ee57cc4930b19d02d533be930b63f0e82f93614b43"
+    },
+    "THIRD-PARTY-NOTICES.md": {
+      "bytes": 2714,
+      "sha256": "c7d7da4f53838812f50045bfdd083865eefb3e498f02505c4f31bdb4cd24934e"
+    },
+    "install.py": {
+      "bytes": 9060,
+      "sha256": "1214108c2f65c51a23ae5b7c44fa1683258ebe094e24445c1591fb171ccb8c66"
+    },
+    "test_installer.py": {
+      "bytes": 7723,
+      "sha256": "de2a922b9bb91363e2062c3d499d8ed296a3d17ea1c0b6794012fcbc52ed0ee6"
+    },
+    "plugins/patrick-michelangelus/plugin.js": {
+      "bytes": 1279475,
+      "sha256": "9a9bc3675074df5ae2ee0745b905cfdcddc473af2124a5e0f2cfca69d840e853"
+    },
+    "plugins/pm-session-details/plugin.js": {
+      "bytes": 62872,
+      "sha256": "47c66c85eec8c51d1410d243596c4525d2af87f2ed40d747282976c8e8176491"
+    },
+    "plugins/pm-session-navigation/plugin.js": {
+      "bytes": 2936,
+      "sha256": "bba32fd225a3662af3fe18a287a2364b72f5ea3c61ce6888250cbbd60c5c2f1a"
+    },
+    "plugins/pm-radio-podcasts/plugin.js": {
+      "bytes": 100092,
+      "sha256": "037befd7dbcd2dff07be378e605475eec2401bcd5e31e1e1c69d427916839caa"
+    }
+  }
+}
