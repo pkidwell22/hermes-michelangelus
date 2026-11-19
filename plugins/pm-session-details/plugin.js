@@ -4,7 +4,10 @@ import { jsx, jsxs } from 'react/jsx-runtime'
 
 const ID = 'pm-session-details'
 const CSS = `
-.pm-details{height:100%;overflow:auto;overscroll-behavior:contain;padding:14px 18px 24px;background:var(--t3-frost-fill,rgba(17,17,17,.65));backdrop-filter:var(--t3-frost-filter,blur(24px));color:var(--ui-text-primary,#f5f5f5);font:14px/1.5 var(--t3-label-font,Michelangelus,Georgia,serif);container-type:inline-size}
+.pm-details{height:100%;display:flex;flex-direction:column;overflow:clip;padding:14px 0 0;background:var(--t3-frost-fill,rgba(17,17,17,.65));backdrop-filter:var(--t3-frost-filter,blur(24px));color:var(--ui-text-primary,#f5f5f5);font:14px/1.5 var(--t3-label-font,Michelangelus,Georgia,serif);container-type:inline-size}
+.pm-details .pd-workspace-frame,.pm-details .pd-scroll-body{scrollbar-gutter:stable;padding-inline:18px}
+.pm-details .pd-workspace-frame{flex:none;overflow:hidden}
+.pm-details .pd-scroll-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:24px}
 .pm-details,.pm-details *{box-sizing:border-box}
 .pm-details :is(button,input,select,summary){font-family:var(--t3-label-font,Michelangelus,Georgia,serif)!important}
 .pm-details button{font-size:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;text-align:left}
@@ -14,12 +17,39 @@ const CSS = `
 .pm-details .pd-section{padding:17px 0;border-bottom:1px solid #ffffff0c}
 .pm-details .pd-section:first-of-type{padding-top:0}
 .pm-details h2{font-size:14px;font-weight:500;margin:0 0 13px;letter-spacing:0}
-.pm-details .pm-workspace-tools{anchor-name:--pm-sidebar-tools;position:relative;z-index:4;height:28px;display:flex;align-items:center;margin:0 0 12px;border-radius:7px;background:transparent;backdrop-filter:none;font-size:12px}
-.pm-details .pm-workspace-tools h2{margin:0}
-:root:has(.pm-workspace-tools[data-active="true"]) [data-tree-group="pm-details-group"]:not([data-zone-header])>[data-panel-header]{
-  height:0!important;min-height:0;padding:0;border:0;overflow:hidden;
+.pm-details .pm-workspace-tools{anchor-name:--pm-sidebar-tools;position:relative;z-index:4;height:28px;display:flex;align-items:flex-start;gap:4px;margin:0 0 12px;border-radius:7px;background:transparent;backdrop-filter:none;font-size:12px}
+.pm-details .pm-workspace-tools[data-rows="2"]{height:56px}
+.pm-details .pd-fold{display:inline-flex;align-items:center;justify-content:center;width:24px;height:28px;flex:none;border-radius:5px;-webkit-app-region:no-drag}
+.pm-details .pd-tabs{display:flex;align-items:center;gap:2px;min-width:0;height:28px;flex:none}
+.pm-details .pd-tab{display:inline-flex;align-items:center;justify-content:center;height:28px;white-space:nowrap;padding:0 4px;border-radius:5px;color:var(--ui-text-tertiary,#999);-webkit-app-region:no-drag}
+.pm-details .pd-tab[aria-selected="true"]{color:var(--ui-text-primary,#eee);background:color-mix(in srgb,var(--ui-text-primary,#eee) 6%,transparent)}
+.pm-details:has(.pm-workspace-tools:is([data-folded="true"],[data-view="files"]))>.pd-scroll-body{display:none!important}
+/* Only the recognized unified island is projected. The native tree, pane DOM,
+   handlers and saved weights remain owned by Hermes; no pane is copied/moved. */
+:root[data-pm-sidebar-ready="true"] [data-tree-split="pm-right-column"] {
+  --pd-sidebar-header:54px;justify-content:flex-start;--pd-settings-height:128px;
+  & > div:has(> [data-tree-group="pm-details-group"]:not([data-pane-host])){flex:1 1 0px!important;min-height:0!important}
+  & > div:has(> [data-tree-group="pm-controls-group"]:not([data-pane-host])){flex:0 0 var(--pd-settings-height)!important;min-height:0!important}
 }
-:root:has(.pm-workspace-tools[data-active="true"]) [data-tree-group="pm-details-group"][data-zone-header]>[data-panel-header]{height:28px!important}
+/* Shrink the frosted card, not the outer horizontal sizing track. */
+:root[data-pm-sidebar-ready="true"][data-pm-sidebar-folded="true"] [data-tree-split="pm-right-column"] {
+  align-self:flex-start;height:calc(var(--pd-sidebar-header) + var(--pd-settings-height) + 2px);max-height:calc(100% - 16px);
+}
+:root[data-pm-sidebar-ready="true"][data-pm-sidebar-rows="2"] [data-tree-split="pm-right-column"]{--pd-sidebar-header:82px}
+:root[data-pm-sidebar-ready="true"] [data-tree-group="pm-details-group"]>[data-panel-header]{height:0!important;min-height:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="workspace"],[data-pm-sidebar-folded="true"]) [data-tree-split="pm-right-column"] > div:has(> :is([data-tree-group="pm-files-group"],[data-tree-group="pm-review-group"]):not([data-pane-host])){display:none!important}
+:root[data-pm-sidebar-ready="true"][data-pm-sidebar-view="files"][data-pm-sidebar-folded="false"] [data-tree-split="pm-right-column"] {
+  & > div:has(> :is([data-tree-group="pm-files-group"],[data-tree-group="pm-review-group"]):not([data-pane-host])){flex:1 1 0px!important;min-height:0!important;overflow:hidden}
+}
+:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="files"],[data-pm-sidebar-folded="true"]) [data-tree-split="pm-right-column"] > div:has(> [data-tree-group="pm-details-group"]:not([data-pane-host])){flex:0 0 var(--pd-sidebar-header)!important;min-height:0!important}
+/* Separate native keep-alive hosts are siblings of the tree, not its children. */
+:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="workspace"],[data-pm-sidebar-folded="true"]) :is([data-pane-host="files"][data-tree-group="pm-files-group"],[data-pane-host="review"][data-tree-group="pm-review-group"]){display:none!important}
+:root[data-pm-session-chat="true"][data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="files"],[data-pm-sidebar-folded="true"]) [data-pm-native-control]{visibility:hidden!important;pointer-events:none!important}
+/* One combined view has one native, non-draggable 50/50 seam. Prevent saved
+   sash weights and minimums from changing either half of this projection. */
+:root[data-pm-sidebar-ready="true"] [data-tree-split="pm-right-column"] > div > [data-sash-overlap]{display:none!important}
+:root[data-pm-sidebar-ready="true"] [data-tree-split="pm-right-column"] > div:has(> [data-tree-group="pm-review-group"]:not([data-pane-host])){border-top:1px solid var(--ui-stroke-secondary,#ffffff18)}
+@container(max-width:260px){.pm-details .pm-workspace-tools{font-size:11px;gap:2px}.pm-details .pd-tab{padding-inline:3px}}
 .pm-details .pd-env{display:flex;align-items:center;gap:12px;min-height:34px;font-size:15px}
 .pm-details .pd-env>span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .pm-details .pd-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:20px;flex:none;color:#999}
@@ -54,9 +84,14 @@ const CSS = `
 .pm-details .pd-output small{color:#888;font-size:12px}
 .pm-details .pd-confirm{padding:12px 0;color:#bbb;font-size:12px}
 .pm-details .pd-confirm>div{display:flex;gap:8px;margin-top:8px}
-.pm-details .pd-performance-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,45%);align-items:center;gap:10px;min-height:30px;padding:0 10px;color:var(--ui-text-secondary,#bbb);font-variant-numeric:tabular-nums}
-.pm-details .pd-performance-row>:last-child{color:var(--ui-text-primary,#eee);text-align:right;min-width:0}
-.pm-details .pd-performance-row .pd-native-slot{width:100%;justify-content:flex-end;font:inherit}
+/* Status rows share the section gutters, including when a native value is unavailable. */
+.pm-details :is(.pd-performance-row,.pd-environment-row){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,45%);align-items:center;gap:10px;min-height:30px;color:var(--ui-text-secondary,#bbb)}
+.pm-details :is(.pd-performance-row,.pd-environment-row)>span{min-width:0;overflow-wrap:anywhere}
+.pm-details :is(.pd-performance-row,.pd-environment-row)>:last-child{color:var(--ui-text-primary,#eee);text-align:end;min-width:0}
+.pm-details :is(.pd-performance-row,.pd-environment-row)>.pd-native-slot{justify-content:flex-end;font:inherit}
+.pm-details :is(.pd-performance-row,.pd-environment-row)>.pd-native-slot>.pd-muted{min-width:0;overflow-wrap:anywhere}
+.pm-details .pd-performance-row{font-variant-numeric:tabular-nums}
+@container(max-width:260px){.pm-details :is(.pd-performance-row,.pd-environment-row){grid-template-columns:minmax(0,1fr) minmax(0,50%)}}
 .pm-details .pd-native-slot{position:relative;min-width:0;display:flex;align-items:center;font-size:12px}
 .pm-details .pd-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:13px}
 .pm-details .pd-section-heading h2{margin:0}
@@ -66,9 +101,7 @@ const CSS = `
 .pm-details .pd-audio .pd-library:hover{color:var(--ui-text-primary,#eee);text-decoration:underline;text-underline-offset:3px}
 .pm-details .pd-audio .pd-library:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
 .pm-details .pd-audio-eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-text-quaternary,#888);margin-bottom:8px}
-.pm-details .pd-environment-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,45%);align-items:center;gap:10px;min-height:30px}
-.pm-details .pd-environment-label{font-size:14px;line-height:1.5;color:var(--ui-text-secondary,#bbb)}
-.pm-details .pd-environment-row{padding:0 10px}
+
 .pm-details .pd-disclosure-section{padding:8px 0}
 .pm-details .pd-disclosure{margin:0}
 .pm-details .pd-disclosure>summary{display:grid;grid-template-columns:18px minmax(0,1fr) auto 10px;gap:8px;min-height:38px;padding:7px 10px;border-radius:7px}
@@ -84,9 +117,14 @@ const CSS = `
 .pm-details :is(.pd-output,.pd-link-row,.pd-disclosure>summary,.pd-secondary){box-sizing:border-box;width:calc(100% - 8px);margin:2px 4px;padding:8px 12px;border-radius:10px;text-align:left;background:transparent}
 .pm-details :is(.pd-output,.pd-link-row,.pd-disclosure>summary,.pd-secondary):hover{background:color-mix(in srgb,var(--t3-fg,#f5f5f5) 5%,transparent)}
 .pm-details :is(.pd-output,.pd-link-row,.pd-disclosure>summary,.pd-secondary):focus-visible{outline:1px solid var(--ui-accent,#346bf1);outline-offset:1px}
-@container(max-width:260px){.pm-details .pd-row{grid-template-columns:9px minmax(0,1fr) 43px 38px;column-gap:7px;font-size:12px}.pm-details .pd-env{font-size:13px}.pm-details .pd-compact{flex-wrap:wrap}}
+@container(max-width:260px){.pm-details .pd-workspace-frame{padding-inline:12px}.pm-details .pd-row{grid-template-columns:9px minmax(0,1fr) 43px 38px;column-gap:7px;font-size:12px}.pm-details .pd-env{font-size:13px}.pm-details .pd-compact{flex-wrap:wrap}}
 `
+const CONTEXT_MIN_WIDTH = '248px'
+const CONTEXT_MAX_WIDTH = '379px' // 363px visible sidebar + 16px horizontal margins.
 const ISLAND_CSS = `
+/* The Workspace disclosure replaces the native sidebar toggle in this header only. */
+:root[data-pm-session-chat="true"]:has(.pm-workspace-tools[data-active="true"]) [data-titlebar-cluster="right"] > button:is([aria-label="Layout editor"],[aria-label="HUD mode"],[data-tour="right-pane-toggle"]) {display:none!important}
+[data-tree-split] > div:has(> [data-tree-split="pm-right-column"]) { min-width:${CONTEXT_MIN_WIDTH}!important; max-width:${CONTEXT_MAX_WIDTH}!important; }
 [data-tree-split="pm-right-column"] {
   box-sizing:border-box;margin:8px 10px 8px 6px;min-width:0;min-height:0;
   border:1px solid color-mix(in srgb,var(--t3-fg,#f5f5f5) 16%,transparent);
@@ -94,6 +132,19 @@ const ISLAND_CSS = `
   background:var(--t3-frost-fill,rgba(17,17,17,.48));
   -webkit-backdrop-filter:var(--t3-frost-filter,blur(24px));
   backdrop-filter:var(--t3-frost-filter,blur(24px));
+}
+/* Match the chat tab strip and the Michelangelus sidebar section labels. */
+:root:is([data-hermes-theme="patrick-michelangelus"],[data-hermes-theme^="patrick-michelangelus-accent-"]) .pm-workspace-tools .pd-tab[aria-selected="true"] {
+  background:transparent!important;border-radius:0;box-shadow:inset 0 -2px var(--ui-accent,var(--t3-primary));color:var(--t3-fg);
+}
+:root:is([data-hermes-theme="patrick-michelangelus"],[data-hermes-theme^="patrick-michelangelus-accent-"]) .pm-workspace-tools .pd-tab[aria-selected="false"] {color:color-mix(in srgb,var(--t3-fg) 74%,transparent)}
+:root:is([data-hermes-theme="patrick-michelangelus"],[data-hermes-theme^="patrick-michelangelus-accent-"]):has(.pm-controls-target[data-active="true"]) [data-slot="statusbar"] {
+  &::before {font-family:var(--t3-label-font);font-variant-caps:small-caps;letter-spacing:.045em;color:color-mix(in srgb,var(--t3-fg) 78%,transparent);border-bottom:1px solid color-mix(in srgb,var(--t3-fg) 12%,transparent)}
+  & button:has(.font-mono.tabular-nums) .font-mono, & button:has(.font-semibold) > .font-semibold {font-family:var(--t3-label-font)!important;font-size:12px!important;font-weight:400!important}
+  & button:has(.font-mono.tabular-nums) .font-mono {text-align:left;width:auto!important}
+  & button.text-primary:has(> .truncate) {color:var(--t3-fg)!important}
+  & button.text-primary:has(> .truncate) > svg {color:var(--ui-accent,var(--t3-primary))}
+  & button.text-primary:has(> .truncate):hover > .truncate {text-decoration:underline;text-underline-offset:3px}
 }
 [data-tree-split="pm-right-column"]:hover {
   border-color:color-mix(in srgb,var(--t3-fg,#f5f5f5) 24%,transparent);
@@ -140,14 +191,28 @@ const CONTROLS_CSS = `
 function ControlsPanel(){
   const visible=useValue(host.paneVisibility(`${ID}:controls`))
   useEffect(()=>{
+    const selector='[data-slot="statusbar"]'
+    let bar=null
     const tagged=new Set()
-    const sync=()=>document.querySelectorAll('[data-slot="statusbar"]>div:last-child>button[aria-haspopup="menu"]').forEach(node=>{
-      const spans=[...node.children].filter(child=>child.matches('span.truncate'))
-      const nativeMeter=spans.length===2&&/^\[[█░]{10}\]\s*~?\d{1,3}%/.test(spans[1].textContent||'')
-      node.toggleAttribute('data-pm-context-duplicate',nativeMeter);if(nativeMeter)tagged.add(node)
-    })
-    const observer=new MutationObserver(sync);observer.observe(document.body,{childList:true,subtree:true,characterData:true});sync()
-    return()=>{observer.disconnect();tagged.forEach(node=>node.removeAttribute('data-pm-context-duplicate'))}
+    const sync=()=>{
+      const next=new Set()
+      for(const node of bar?.querySelectorAll(':scope>div:last-child>button[aria-haspopup="menu"]')||[]){
+        const spans=[...node.children].filter(child=>child.matches('span.truncate'))
+        if(spans.length===2&&/^\[[█░]{10}\]\s*~?\d{1,3}%/.test(spans[1].textContent||'')){next.add(node);node.toggleAttribute('data-pm-context-duplicate',true)}
+      }
+      for(const node of tagged)if(!next.has(node))node.removeAttribute('data-pm-context-duplicate')
+      tagged.clear();for(const node of next)tagged.add(node)
+    }
+    const meter=new MutationObserver(sync)
+    // Watch direct ancestors only for removal/replacement of the bar, not transcript edits.
+    const mount=new MutationObserver(()=>{if(!bar?.isConnected)bind()})
+    const bind=()=>{
+      mount.disconnect();meter.disconnect();bar=document.querySelector(selector)
+      if(bar){meter.observe(bar,{childList:true,characterData:true,subtree:true});for(let n=bar.parentElement;n;n=n.parentElement)mount.observe(n,{childList:true})}
+      else mount.observe(document.body,{subtree:true,childList:true})
+      sync()
+    }
+    bind();return()=>{mount.disconnect();meter.disconnect();tagged.forEach(node=>node.removeAttribute('data-pm-context-duplicate'))}
   },[])
   return jsxs('div',{className:'pm-controls-target','data-active':String(visible),'aria-label':'App settings',children:[jsx('style',{children:CONTROLS_CSS+ISLAND_CSS})]})
 }
@@ -214,7 +279,7 @@ function useRowVisibility(ref,active=true){
   const [visible,setVisible]=useState(false)
   useLayoutEffect(()=>{
     if(!active){setVisible(false);return}
-    const node=ref.current,root=node?.closest('.pm-details')
+    const node=ref.current,root=node?.closest('.pd-scroll-body,.pm-details')
     if(!node||!root)return
     const observer=new IntersectionObserver(([entry])=>setVisible(entry.isIntersecting&&entry.intersectionRatio>=0.999),{root,threshold:[0,0.999,1]})
     observer.observe(node)
@@ -222,33 +287,76 @@ function useRowVisibility(ref,active=true){
   },[active])
   return visible
 }
-function WorkspaceTools({active}) {
+const sidebarStates=new Map()
+function sidebarGroups(){
+  const split=document.querySelector('[data-tree-split="pm-right-column"]')
+  if(!split||!split.closest('[data-tree-split="pm-unified-root"]'))return null
+  const groups=['pm-details-group','pm-files-group','pm-review-group','pm-controls-group'].map(id=>[...split.children].map(track=>track.querySelector(`:scope > [data-tree-group="${id}"]:not([data-pane-host])`)).find(Boolean))
+  return groups.every(Boolean)?{split,groups}:null
+}
+function WorkspaceTools({active,scope}) {
+  const [state,setState]=useState(()=>sidebarStates.get(scope)||{view:'workspace',workspace:false,files:false})
+  const view=state.view,folded=state[view],label=view==='files'?'Files & Review':'Workspace'
+  const action=`${folded?'Expand':'Collapse'} ${label}`
+  const update=fn=>setState(previous=>{const next=fn(previous);sidebarStates.delete(scope);sidebarStates.set(scope,next);if(sidebarStates.size>64)sidebarStates.delete(sidebarStates.keys().next().value);return next})
+  const select=view=>{
+    // This is the host's real native reveal, including dismissal/minimize state.
+    // Never replace the file tree with another filesystem or RPC implementation.
+    if(view==='files'&&sidebarGroups()){host.revealPane?.('files');host.revealPane?.('review')}
+    update(previous=>({...previous,view}))
+  }
+  const toggle=()=>update(previous=>({...previous,[previous.view]:!previous[previous.view]}))
   const ref=useRef(null),visible=useRowVisibility(ref,active),[base,setBase]=useState(null)
   useLayoutEffect(()=>{
     if(!active)return
     const container=ref.current?.closest('.pm-details')
     if(!container)return
-    // The native titlebar precedes the absolutely-positioned pane host, so
-    // Chromium cannot resolve a direct anchor to that later layout subtree.
-    // Measure only layout changes; its compositor scroll timeline moves it.
+    const cluster=document.querySelector('[data-titlebar-cluster="right"]')
+    let alive=true
     const measure=()=>{
-      const r=ref.current.getBoundingClientRect()
-      const next={x:r.left,y:r.top+container.scrollTop,w:r.width,range:Math.max(0,container.scrollHeight-container.clientHeight)}
+      if(!alive||!ref.current)return
+      const r=ref.current.getBoundingClientRect(),tabs=ref.current.querySelector('.pd-tabs'),fold=ref.current.querySelector('.pd-fold')
+      // Measure the original cluster with its real current (possibly hidden)
+      // actions. Do not force child visibility; parent icon removals survive.
+      const tools=cluster?.getBoundingClientRect().width||0
+      const rows=r.width<(tabs?.getBoundingClientRect().width||0)+(fold?.getBoundingClientRect().width||24)+tools+12?2:1
+      const next={x:r.left,y:r.top,w:r.width,tools,rows,ready:!!sidebarGroups()}
       setBase(old=>JSON.stringify(old)===JSON.stringify(next)?old:next)
     }
-    const resize=new ResizeObserver(measure);resize.observe(ref.current);resize.observe(container)
-    const changes=new MutationObserver(measure);changes.observe(container,{childList:true,subtree:true,attributes:true,attributeFilter:['open']})
+    const resize=new ResizeObserver(measure);resize.observe(ref.current);resize.observe(container);if(cluster)resize.observe(cluster)
+    const mutation=new MutationObserver(changes=>{
+      const structural='[data-tree-split],[data-tree-group],[data-titlebar-cluster]'
+      if(changes.some(change=>change.type==='attributes'||cluster?.contains(change.target)||[...change.addedNodes,...change.removedNodes].some(node=>node.nodeType===1&&(node.matches?.(structural)||node.querySelector?.(structural)))))measure()
+    })
+    mutation.observe(document.body,{childList:true,subtree:true});if(cluster)mutation.observe(cluster,{attributes:true,subtree:true,attributeFilter:['class','style','hidden']})
     window.addEventListener('resize',measure);window.addEventListener('pointerup',measure,true)
+    document.fonts?.ready.then(measure)
     measure()
-    return()=>{resize.disconnect();changes.disconnect();window.removeEventListener('resize',measure);window.removeEventListener('pointerup',measure,true)}
+    return()=>{alive=false;resize.disconnect();mutation.disconnect();window.removeEventListener('resize',measure);window.removeEventListener('pointerup',measure,true)}
   },[active])
+  useLayoutEffect(()=>{
+    const root=document.documentElement,ready=active&&base?.ready
+    root.setAttribute('data-pm-sidebar-ready',String(!!ready))
+    root.setAttribute('data-pm-sidebar-view',view);root.setAttribute('data-pm-sidebar-folded',String(folded));root.setAttribute('data-pm-sidebar-rows',String(base?.rows||2))
+    return()=>{['ready','view','folded','rows'].forEach(key=>root.removeAttribute(`data-pm-sidebar-${key}`))}
+  },[active,base?.ready,base?.rows,view,folded])
   const selector=':root:not([data-pm-session-chat="false"]):has(.pm-workspace-tools[data-active="true"]) [data-titlebar-cluster="right"]'
   const css=active&&base?`
-:root:has(.pm-workspace-tools[data-active="true"]){timeline-scope:--pm-workspace-scroll}
-.pm-details:has(.pm-workspace-tools[data-active="true"]){scroll-timeline:--pm-workspace-scroll block}
-@keyframes pm-workspace-follow-scroll{from{transform:translateY(0)}to{transform:translateY(-${base.range}px)}}
-${selector}{position:fixed;inset:auto;left:${base.x}px;top:${base.y}px;width:${base.w}px;height:28px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;padding:0 0 0 108px;gap:0;translate:none;z-index:70;animation:pm-workspace-follow-scroll 1s linear both;animation-timeline:--pm-workspace-scroll;visibility:${visible?'visible':'hidden'}!important;pointer-events:${visible?'auto':'none'}!important;}`:''
-  return jsxs('div',{ref,className:'pm-workspace-tools','data-active':String(active),children:[jsx('span',{className:'pd-muted',children:'Workspace'}),jsx('style',{children:css})]})
+${selector}{position:fixed;inset:auto;left:${base.x+base.w-base.tools}px;top:${base.y+(base.rows===2?28:0)}px;width:max-content;height:28px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;padding:0;gap:0;translate:none;z-index:70;transform:none;visibility:${visible?'visible':'hidden'}!important;pointer-events:none!important;}
+${selector}>*{pointer-events:${visible?'auto':'none'}!important;}`:''
+  const keydown=event=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return
+    event.preventDefault();const next=event.key==='Home'?'workspace':event.key==='End'?'files':view==='workspace'?'files':'workspace'
+    if(next==='files'&&!base?.ready)return
+    select(next);ref.current?.querySelector(`[data-sidebar-tab="${next}"]`)?.focus()
+  }
+  return jsxs('div',{ref,className:'pm-workspace-tools','data-active':String(active),'data-view':view,'data-folded':String(folded),'data-rows':String(base?.rows||2),children:[
+    jsx('button',{type:'button',className:'pd-fold pd-muted',title:action,'aria-label':action,'aria-expanded':!folded,onClick:toggle,children:jsx('svg',{'aria-hidden':true,width:12,height:12,viewBox:'0 0 16 16',children:jsx('path',{d:folded?'M6 3.5 10.5 8 6 12.5':'M3.5 6 8 10.5 12.5 6',fill:'none',stroke:'currentColor',strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round'})})}),
+    jsxs('div',{className:'pd-tabs',role:'tablist','aria-label':'Sidebar view',onKeyDown:keydown,children:[
+      jsx('button',{type:'button',className:'pd-tab',role:'tab',id:'pm-sidebar-workspace-tab','data-sidebar-tab':'workspace','aria-controls':'pm-sidebar-workspace-body','aria-selected':view==='workspace',tabIndex:view==='workspace'?0:-1,onClick:()=>select('workspace'),children:'Workspace'}),
+      jsx('button',{type:'button',className:'pd-tab',role:'tab','data-sidebar-tab':'files','aria-selected':view==='files',tabIndex:view==='files'?0:-1,disabled:!base?.ready,onClick:()=>select('files'),children:'Files & Review'})
+    ]}),jsx('style',{children:css})
+  ]})
 }
 const nativeSelector={
   connection:'[data-slot="statusbar"] [data-slot="connection-switcher"]',
@@ -430,6 +538,10 @@ function DetailsPanel({sid,owner,lifecycle}) {
   const percent=max>0&&used!==null?Math.min(100,used/max*100):null,free=max>0&&used!==null?Math.max(0,max-used):null,categories=normalizeCategories(b)
   const lastReported=hasContextWindow(b)?` Showing last reported values${b.model?' for '+b.model:''}.`:''
   const contextNote=!enabled?'Waiting for a resolved session.':breakdown.isError?'Context refresh unavailable.'+lastReported:breakdown.isFetching&&b?'Updating context…'+lastReported:reading&&!hasContextWindow(reading)?'Context window not reported yet.'+lastReported:!b?'Loading context breakdown…':`${base.context_estimated!==false?'Estimated usage. ':''}Category estimates refresh on model changes and at turn end.${live?' Usage is live.':''}`
+  const contextModel=typeof b?.model==='string'&&b.model?b.model:null
+  const pending=!breakdown.isPlaceholderData&&!breakdown.isError&&!breakdown.isFetching?reading?.deferred_model:null
+  const pendingLabel=pending?.state==='queued'?'Next turn':pending?.state==='confirmation_required'?'Awaiting approval':null
+  const nextModel=typeof pending?.model==='string'&&pending.model?pending.model:null
   const sum=categories.reduce((n,c)=>n+(finite(c.tokens)?c.tokens:0),0),segmentsTotal=Math.max(max||0,sum,1)
 
   const serverRows=Array.isArray(servers.data)?servers.data:Array.isArray(servers.data?.servers)?servers.data.servers:[]
@@ -444,8 +556,13 @@ function DetailsPanel({sid,owner,lifecycle}) {
   }
   return jsxs('aside',{className:'pm-details','aria-label':'Session details',children:[
     jsx('style',{children:CSS+ISLAND_CSS}),
-    jsx(WorkspaceTools,{active:detailsVisible}),
-    jsxs('section',{className:'pd-section',children:[jsx('h2',{children:'Context'}),jsxs('div',{className:'pd-heading',children:[jsx('span',{children:percent===null?(enabled?'Context pending':'Waiting for session'):`${Math.round(percent)}% used`}),jsx('span',{className:'pd-muted',children:`${count(used)} / ${count(max)}`})]}),jsx('div',{className:'pd-meter','aria-label':'Context breakdown',children:categories.filter(c=>finite(c.tokens)).map(c=>jsx('span',{title:`${c.label}: ${count(c.tokens)}`,style:{width:`${c.tokens/segmentsTotal*100}%`,background:c.color}},c.id))}),categories.map(c=>jsx(MeterRow,{...c,max},c.id)),jsx('div',{className:'pd-gap',children:jsx(MeterRow,{label:'Free space',tokens:free,color:'#2b2b2b',max})}),
+    jsx('div',{className:'pd-workspace-frame',children:jsx(WorkspaceTools,{active:detailsVisible,scope})}),
+    jsxs('div',{className:'pd-scroll-body',id:'pm-sidebar-workspace-body',role:'tabpanel','aria-labelledby':'pm-sidebar-workspace-tab',children:[
+    jsxs('section',{className:'pd-section',children:[
+    jsx('h2',{children:'Context'}),
+    contextModel&&jsx('div',{className:'pd-context-model pd-note',children:`Context for: ${contextModel}`},'context-model'),
+    pendingLabel&&nextModel&&jsx('div',{className:'pd-deferred-model pd-note',children:`${pendingLabel}: ${nextModel}`},'deferred-model'),
+    jsxs('div',{className:'pd-heading',children:[jsx('span',{children:percent===null?(enabled?'Context pending':'Waiting for session'):`${Math.round(percent)}% used`}),jsx('span',{className:'pd-muted',children:`${count(used)} / ${count(max)}`})]}),jsx('div',{className:'pd-meter','aria-label':'Context breakdown',children:categories.filter(c=>finite(c.tokens)).map(c=>jsx('span',{title:`${c.label}: ${count(c.tokens)}`,style:{width:`${c.tokens/segmentsTotal*100}%`,background:c.color}},c.id))}),categories.map(c=>jsx(MeterRow,{...c,max},c.id)),jsx('div',{className:'pd-gap',children:jsx(MeterRow,{label:'Free space',tokens:free,color:'#2b2b2b',max})}),
     jsxs('details',{children:[jsxs('summary',{children:['MCP servers',jsx('span',{className:'pd-count',children:servers.data?String(serverRows.length):'—'})]}),jsx('div',{className:'pd-detail-body',children:serverRows.length?serverRows.map((server,i)=>jsx(McpServerRow,{server},i)):servers.isError?'Server inventory unavailable.':'No server inventory reported.'})]},'mcp-servers'),
     jsxs('details',{children:[jsxs('summary',{children:['Context files',jsx('span',{className:'pd-count',children:b?String(contextFiles.length):'—'})]}),jsx('div',{className:'pd-detail-body',children:contextFiles.length?contextFiles.map((f,i)=>jsx('div',{title:f.path,children:`${f.label||f.path} · ${count(f.est_tokens)}`},i)):'No file breakdown reported.'})]},'context-files'),
     jsxs('div',{className:'pd-compact',children:[jsx('span',{children:'Compact this conversation'}),jsx('button',{disabled:!enabled||busy||compacting,onClick:()=>{if(current())setConfirm(true)},children:compacting?'Compacting…':'Compact session'})]}),
@@ -458,6 +575,7 @@ function DetailsPanel({sid,owner,lifecycle}) {
     jsxs(InlineInventory,{title:'Connectors',icon:'server',detail:enabled&&servers.data?`${serverRows.length} MCP`:'Not reported',children:[jsx('p',{children:'MCP servers for the focused chat owner. This is not the full connector catalogue.'}),...(enabled?serverRows:[]).map((server,index)=>jsx('div',{children:typeof server==='string'?server:server.name||server.id||'MCP server'},index)),!serverRows.length&&jsx('p',{children:servers.isError?'MCP inventory unavailable.':'No MCP inventory reported.'}),jsx('button',{className:'pd-secondary',onClick:nav('/capabilities?tab=connectors'),children:'Open full connector management ↗'})]}),
     jsxs(InlineInventory,{title:'Outputs',icon:'output',detail:'Not linked',children:[jsx('p',{children:'Current-session output inventory is not connected to this sidebar.'}),jsx('button',{className:'pd-secondary',onClick:nav('/artifacts'),children:'Open full artifact library (all sessions) ↗'})]}),
     jsxs(InlineInventory,{title:'Servers',icon:'server',detail:'Not reported',children:[jsx('p',{children:'Development-server inventory is not available in this sidebar.'}),jsx('button',{className:'pd-secondary',onClick:nav('/command-center?section=system'),children:'Open full system tools ↗'})]})
+    ]})
   ]})
 }
 const ownerKey=owner=>owner?JSON.stringify([owner.connectionId||'local',owner.profile]):null
@@ -473,15 +591,96 @@ function Panel({lifecycle}){
 // lifecycle instead: a visible composer owns chat chrome, a workspace page
 // header vetoes it (even beside a split chat), and overlays unmount titlebar.
 // Never infer chat from a retained focused id or maintain a pathname blacklist.
+// Older packaged hosts have no layout.chatCompanion projection. Reorder the
+// existing flex tracks of the unified layout without moving webviews or panes.
+function legacyRail(ctx, markers, visible, paneOf){
+  const rootSel='[data-tree-split="pm-unified-root"]',key='pm-session-details.railSizes.v1'
+  let last='',lastTarget='',frame=0,drag=null,dead=false
+  const css=document.createElement('style');document.head.append(css)
+  let sizes={};try{sizes=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch{}
+  const save=()=>{try{localStorage.setItem(key,JSON.stringify(sizes))}catch{}}
+  const group=t=>t.querySelector(':scope > [data-tree-group],:scope > [data-tree-split]')
+  const id=t=>{const g=group(t);return g?.dataset.treeSplit||g?.dataset.treeGroup||''}
+  const sel=t=>{const g=group(t);return `${rootSel} > div:has(> [${g.dataset.treeSplit?'data-tree-split':'data-tree-group'}="${globalThis.CSS.escape(id(t))}"])`}
+  // Inline panes carry no data-pane-id on the packaged renderer. Chat surfaces
+  // do carry the same data-composer-target the app uses to route input.
+  const targetOf=n=>n?.closest?.('[data-composer-target]')?.getAttribute('data-composer-target')||''
+  const isChatTarget=t=>t==='main'||t.startsWith('tile:')
+  const model=()=>{
+    const root=document.querySelector(rootSel);if(!root||document.documentElement.dataset.pmSessionChat!=='true'||document.querySelector('[data-layout-edit="true"]'))return
+    const tracks=[...root.children],rail=tracks.find(t=>id(t)==='pm-right-column');if(!rail||!rail.getBoundingClientRect().width)return
+    const chats=[...markers.chat].filter(visible),selected=host.state.focusedStoredSessionId?.get(),tile=selected&&`session-tile:${selected}`,tileTarget=selected&&`tile:${selected}`
+    const chat=chats.find(n=>paneOf(n)===last)||chats.find(n=>paneOf(n)===tile)||chats.find(n=>targetOf(n)===lastTarget)||chats.find(n=>targetOf(n)===tileTarget)||chats.find(n=>paneOf(n)==='workspace')||chats.find(n=>targetOf(n)==='main')||chats[0]
+    const at=tracks.find(t=>chat&&t.contains(chat));if(!at||at===rail||tracks.some(t=>!id(t)))return
+    const order=tracks.filter(t=>t!==rail);order.splice(order.indexOf(at)+1,0,rail);return {root,tracks,order}
+  }
+  // A minimized native group becomes a vertical tab strip. Keep its visual
+  // order, but let Hermes own its collapsed width, even between paints.
+  const verticalRail='[role="tablist"][aria-orientation="vertical"] [data-tree-tab]'
+  const minimized=t=>t.matches(`:has(> [data-tree-group] ${verticalRail})`)
+  const paint=()=>{
+    frame=0;if(dead)return
+    const m=model();let rules=''
+    if(m)for(const [i,t] of m.order.entries()){
+      const track=sel(t),v=sizes[id(t)]
+      rules+=`${track}{order:${i}!important}\n`
+      if(v&&Number.isFinite(v.n)&&v.n>0){
+        const flex=v.fixed?`0 1 ${v.n}px`:`${v.n} ${v.n} 0px`
+        rules+=`${track}:not(:has(> [data-tree-group] ${verticalRail})){flex:${flex}!important}\n`
+      }
+    }
+    if(css.textContent!==rules)css.textContent=rules
+  }
+  const schedule=()=>{if(!frame&&!dead)frame=requestAnimationFrame(paint)}
+  const remember=e=>{const p=paneOf(e.target);if(p==='workspace'||p?.startsWith('session-tile:')){last=p;lastTarget='';schedule();return}const t=targetOf(e.target);if(isChatTarget(t)){lastTarget=t;last='';schedule()}}
+  const seam=e=>{
+    const h=e.target.closest?.('[data-sash-overlap]'),m=model();if(!h||!m||h.parentElement.parentElement!==m.root)return
+    const b=h.parentElement,shown=m.order.filter(t=>t.getBoundingClientRect().width>0),i=shown.indexOf(b),a=shown[i-1]
+    if(!a||minimized(a)||minimized(b))return
+    const next=shown[i+1],browser=id(b)==='pm-right-column'&&next&&!minimized(next)&&next.querySelector('[aria-selected="true"]:is([data-tree-tab="preview"],[data-tree-tab^="preview-tile:"])')?next:null
+    const original=m.tracks.filter(t=>shown.includes(t));if(!browser&&original[original.indexOf(b)-1]===a&&!Object.keys(sizes).length)return
+    return {h,a,b,shown,browser}
+  }
+  const down=e=>{if(e.button!==0||drag)return;const s=seam(e);if(!s)return;e.preventDefault();e.stopPropagation();const tracks=s.shown.filter(t=>!minimized(t)).map(t=>{const c=getComputedStyle(t);return {t,w:t.getBoundingClientRect().width,fixed:parseFloat(c.flexGrow)===0,min:Math.max(64,parseFloat(c.minWidth)||0),max:parseFloat(c.maxWidth)||Infinity}}),a=tracks.find(x=>x.t===s.a),b=tracks.find(x=>x.t===s.b);const start=e.clientX,prior={...sizes};const browser=tracks.find(x=>x.t===s.browser)
+    const move=v=>{
+      if(v.pointerId!==e.pointerId)return
+      const delta=v.clientX-start
+      const d=Math.max(Math.max(a.min-a.w,b.w-b.max),Math.min(Math.min(a.max-a.w,b.w-b.min),delta))
+      // When the rail reaches its ceiling, give the rest of this leftward drag to Browser.
+      const spill=browser&&delta<d?Math.max(0,Math.min(d-delta,a.w+d-a.min,browser.max-browser.w)):0
+      for(const x of tracks)sizes[id(x.t)]={fixed:x.fixed,n:Math.max(1,x.w+(x===a?d-spill:x===b?-d:x===browser?spill:0))}
+      paint()
+    };const end=v=>{if(v&&v.pointerId!==e.pointerId)return;const cancel=!v||v.type==='pointercancel';if(cancel)sizes=prior;else save();s.h.removeEventListener('pointermove',move);s.h.removeEventListener('pointerup',end);s.h.removeEventListener('pointercancel',end);s.h.removeEventListener('lostpointercapture',end);drag=null;schedule()};drag=end;s.h.setPointerCapture(e.pointerId);s.h.addEventListener('pointermove',move);s.h.addEventListener('pointerup',end);s.h.addEventListener('pointercancel',end);s.h.addEventListener('lostpointercapture',end)}
+  const reset=e=>{if(!seam(e))return;e.preventDefault();e.stopPropagation();sizes={};save();paint()}
+  const observer=new MutationObserver(changes=>{if(changes.some(x=>x.type==='attributes'||[...x.addedNodes,...x.removedNodes].some(n=>n.nodeType===1&&(n.matches?.('[data-tree-split],[data-tree-group],[data-pane-id]')||n.querySelector?.('[data-tree-split],[data-tree-group],[data-pane-id]')))))schedule()});observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-pane-hidden','inert','hidden']});observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-pm-session-chat','data-layout-edit']})
+  document.addEventListener('focusin',remember,true);document.addEventListener('pointerdown',remember,true);document.addEventListener('pointerdown',down,true);document.addEventListener('dblclick',reset,true);window.addEventListener('resize',schedule);const stop=host.state.focusedStoredSessionId?.listen(()=>{last='';lastTarget='';schedule()});schedule()
+  ctx.onDispose(()=>{dead=true;drag?.();observer.disconnect();stop?.();cancelAnimationFrame(frame);css.remove();document.removeEventListener('focusin',remember,true);document.removeEventListener('pointerdown',remember,true);document.removeEventListener('pointerdown',down,true);document.removeEventListener('dblclick',reset,true);window.removeEventListener('resize',schedule)})
+}
+
 function sessionLifecycle(ctx) {
   const markers={chat:new Set(),page:new Set(),shell:new Set()}
   let active=false,disposed=false,timer=0,unregister=[]
+  const focusedPane=host.state.focusedChatPaneId
+  const anchor=atom(null)
+  if(focusedPane)ctx.register({id:'chat-companion',area:'layout.chatCompanion',data:{
+    pane:`${ID}:panel`,companionPanes:[`${ID}:controls`],legacySplit:'pm-right-column',legacyPanes:['files','review'],anchor
+  }})
   const epoch=atom(0),bump=()=>epoch.set(epoch.get()+1)
+  const paneOf=node=>{
+    const layer=node.closest('[data-pane-id],[data-pane-host]')
+    return layer?.getAttribute('data-pane-id')??layer?.getAttribute('data-pane-host')
+  }
   const visible=node=>{
-    const pane=node.closest('[data-pane-host]')?.getAttribute('data-pane-host')
+    const pane=paneOf(node)
     return node.isConnected&&!node.closest('[data-pane-hidden],[inert],[hidden]')&&(!pane||host.paneVisibility(pane).get())
   }
-  const wantsChat=()=>!disposed&&[...markers.shell].some(visible)&&[...markers.chat].some(visible)&&![...markers.page].some(visible)
+  const chatMarker=()=>{
+    if(disposed||![...markers.shell].some(visible)||[...markers.page].some(visible))return
+    const focused=focusedPane?.get()
+    return [...markers.chat].find(node=>visible(node)&&(!focusedPane||(focused&&paneOf(node)===focused)))
+  }
+  if(!focusedPane)legacyRail(ctx,markers,visible,paneOf)
+  const wantsChat=()=>Boolean(chatMarker())
   const style=document.createElement('style')
   style.dataset.pmSessionLifecycle=''
   style.textContent=`
@@ -490,19 +689,20 @@ function sessionLifecycle(ctx) {
 `
   // Keep the native Files/Review contributions, user layout, widths and Close
   // preferences intact. Only the wrapper of our named island leaves the grid.
-  document.head.append(style)
+  if(!focusedPane)document.head.append(style)
   const lifecycle={epoch,get generation(){return epoch.get()},isActive:wantsChat}
   const sync=()=>{
     timer=0
     if(disposed)return
-    const next=wantsChat()
+    const marker=chatMarker(),next=Boolean(marker)
+    anchor.set(marker?paneOf(marker)??null:null)
     document.documentElement.setAttribute('data-pm-session-chat',String(next))
     if(next===active)return
     active=next;bump()
     if(next){
       unregister=[
-        ctx.register({id:'panel',area:'panes',title:'Session details',data:{placement:'right',width:'340px',dock:{pane:'workspace',pos:'right'}},render:()=>jsx(Panel,{lifecycle})}),
-        ctx.register({id:'controls',area:'panes',title:'App settings',data:{placement:'right',width:'340px',height:'128px',minHeight:'84px',maxHeight:'180px'},render:()=>jsx(ControlsPanel,{})})
+        ctx.register({id:'panel',area:'panes',title:'Session details',data:{placement:'right',width:CONTEXT_MIN_WIDTH,minWidth:CONTEXT_MIN_WIDTH,maxWidth:CONTEXT_MAX_WIDTH,dock:{pane:'workspace',pos:'right'}},render:()=>jsx(Panel,{lifecycle})}),
+        ctx.register({id:'controls',area:'panes',title:'App settings',data:{placement:'right',width:CONTEXT_MIN_WIDTH,minWidth:CONTEXT_MIN_WIDTH,maxWidth:CONTEXT_MAX_WIDTH,height:'128px',minHeight:'84px',maxHeight:'180px',...(focusedPane?{dock:{pane:`${ID}:panel`,pos:'bottom'}}:{})},render:()=>jsx(ControlsPanel,{})})
       ]
     }else{const stops=unregister;unregister=[];stops.forEach(stop=>stop())}
   }
@@ -512,7 +712,7 @@ function sessionLifecycle(ctx) {
     useLayoutEffect(()=>{
       const node=ref.current;markers[kind].add(node);schedule()
       // Pane visibility also follows collapsed sides, tab focus and overlays.
-      const pane=node.closest('[data-pane-host]')?.getAttribute('data-pane-host')
+      const pane=paneOf(node)
       const stop=pane?host.paneVisibility(pane).listen(schedule):null
       return()=>{markers[kind].delete(node);stop?.();schedule()}
     },[kind])
@@ -523,12 +723,13 @@ function sessionLifecycle(ctx) {
   ctx.register({id:'shell-lifecycle',area:'titleBar.center',render:()=>jsx(Marker,{kind:'shell'})})
   const observer=new MutationObserver(schedule)
   observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['data-pane-hidden','inert','hidden']})
+  const stopPane=focusedPane?.listen(schedule)
   const focusSignature=()=>JSON.stringify([host.state.focusedSessionId.get(),host.state.focusedStoredSessionId?.get(),ownerKey(host.state.focusedSessionOwner?.get())])
   let lastFocus=focusSignature()
   const focusChanged=()=>{const next=focusSignature();if(next!==lastFocus){lastFocus=next;bump()}}
   const focusStops=[host.state.focusedSessionId,host.state.focusedStoredSessionId,host.state.focusedSessionOwner].filter(Boolean).map(store=>store.listen(focusChanged))
   sync()
-  ctx.onDispose(()=>{disposed=true;bump();clearTimeout(timer);observer.disconnect();focusStops.forEach(stop=>stop());unregister.forEach(stop=>stop());style.remove();document.documentElement.removeAttribute('data-pm-session-chat')})
+  ctx.onDispose(()=>{disposed=true;anchor.set(null);bump();clearTimeout(timer);observer.disconnect();stopPane?.();focusStops.forEach(stop=>stop());unregister.forEach(stop=>stop());style.remove();document.documentElement.removeAttribute('data-pm-session-chat')})
   return lifecycle
 }
 export default {id:ID,name:'Session details',description:'Reference-style right sidebar using live Hermes context and native controls.',register(ctx){

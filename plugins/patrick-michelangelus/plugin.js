@@ -182,7 +182,7 @@ const css = `
   [data-slot="dropdown-menu-label"], [data-slot="dropdown-menu-item"],
   [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-checkbox-item"],
   [data-slot="button"]:not(.composer-human-message),
-  [data-tour="model-pill"], [data-testid="reasoning-pill"],
+  [data-tour="model-pill"], [data-testid="reasoning-pill"], [data-testid="speed-pill"],
   .status-section-trigger > .truncate
 ) {
   font-family: var(--t3-label-font);
@@ -274,7 +274,7 @@ const css = `
 :root[data-hermes-theme="patrick-michelangelus"] [data-slot="composer-fade"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"])) {
   order: 1 !important; max-width: min(260px, 50%); min-width: 0;
 }
-:root[data-hermes-theme="patrick-michelangelus"] [data-slot="composer-fade"] [data-testid="reasoning-pill"] {
+:root[data-hermes-theme="patrick-michelangelus"] [data-slot="composer-fade"] :is([data-testid="reasoning-pill"], [data-testid="speed-pill"]) {
   order: 2 !important;
 }
 :root[data-hermes-theme="patrick-michelangelus"] [data-slot="composer-fade"] [class*="grid-area:menu"] {
@@ -578,20 +578,20 @@ const css = `
 const composerCss = `
 /* Composer controls: T3 ComposerControl "sm" (h-7, px-2.5, gap-1.5, text-sm
    font-medium, secondary label color measured in the T3 app). */
-:root[data-hermes-theme="patrick-michelangelus"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"]), [data-testid="reasoning-pill"]) {
+:root[data-hermes-theme="patrick-michelangelus"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"]), [data-testid="reasoning-pill"], [data-testid="speed-pill"]) {
   height: 28px; padding-inline: 10px; gap: 6px; border-radius: 8px;
   font-size: 14px; font-weight: 700; color: #767676;
 }
-:root[data-hermes-theme="patrick-michelangelus"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"]), [data-testid="reasoning-pill"]):is(:hover, [data-state="open"]) {
+:root[data-hermes-theme="patrick-michelangelus"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"]), [data-testid="reasoning-pill"], [data-testid="speed-pill"]):is(:hover, [data-state="open"]) {
   color: var(--t3-fg); background: rgb(255 255 255 / 6%);
 }
-:root[data-hermes-theme="patrick-michelangelus"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"]), [data-testid="reasoning-pill"]) > svg {
+:root[data-hermes-theme="patrick-michelangelus"] :is([data-tour="model-pill"], button:has(+ [data-testid="reasoning-pill"]), [class*="grid-area:controls"] > div > button[aria-haspopup="menu"]:first-child:not([data-testid="reasoning-pill"]), [data-testid="reasoning-pill"], [data-testid="speed-pill"]) > svg {
   width: 14px; height: 14px; opacity: .6;
 }
-:root[data-hermes-theme="patrick-michelangelus"] [data-testid="reasoning-pill"] { position: relative; margin-inline-start: var(--t3-separator-space, 9px); }
+:root[data-hermes-theme="patrick-michelangelus"] :is([data-testid="reasoning-pill"], button + [data-testid="speed-pill"]) { position: relative; margin-inline-start: var(--t3-separator-space, 9px); }
 /* The separator sits in the middle of the row gap plus that margin, so the
    space to the model and to the effort is equal. */
-:root[data-hermes-theme="patrick-michelangelus"] [data-testid="reasoning-pill"]::before {
+:root[data-hermes-theme="patrick-michelangelus"] :is([data-testid="reasoning-pill"], button + [data-testid="speed-pill"])::before {
   content: ''; position: absolute; width: 1px; height: 16px; top: calc(50% - 8px);
   inset-inline-start: calc((var(--t3-control-gap, 6px) + var(--t3-separator-space, 9px) + 1px) / -2);
   background: rgb(255 255 255 / 8%);
@@ -658,7 +658,7 @@ const composerCss = `
   [data-slot="aui_assistant-message-content"] .aui-md:not(.font-mono),
   [data-slot="composer-rich-input"], label, legend,
   [data-slot="button"]:not(:disabled):not([data-variant="destructive"]),
-  [data-tour="model-pill"], [data-testid="reasoning-pill"],
+  [data-tour="model-pill"], [data-testid="reasoning-pill"], [data-testid="speed-pill"],
   .status-section-trigger, .status-row-content, .hover-marquee, .session-row-tail,
   [data-slot="tool-row"], [data-slot="tool-block"], [data-slot="tools-summary"],
   [data-slot="aui_turn-activity"], [data-slot="aui_turn-duration"],

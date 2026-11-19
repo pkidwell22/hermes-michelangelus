@@ -22,6 +22,8 @@ Choose the target Hermes profile explicitly. Select **Michelangelus** in the the
 
 **Media setup:** Choose `--mode media` in place of `full`. Disable the stock Radio player before enabling the bundled podcast/radio player, so only one owns playback. The RSS episode library needs a separately installed RSS Reader with the `hermes:rss-library:v1` integration; the [upstream reader](https://github.com/Adolanium/hermes-rss) alone is not verified to supply it. Radio streams need network access. Music.app integration is optional and uses the recipient’s own library and macOS permissions. No feeds, credentials, playlist files, listening history or personal profile are included.
 
+**Optional Desktop source patch:** [Restore the Speed picker beside Thinking](patches/hermes-desktop/README.md) on the supported Hermes revision. The plugin installer does not apply the patch or replace the Desktop app.
+
 ## Uninstall and test
 
 Switch back to your previous theme and layout, then run `python3 install.py uninstall --hermes-home "$HOME/.hermes"`. Previously backed-up plugin files are restored. If you enabled the optional player, re-enable stock Radio as needed.

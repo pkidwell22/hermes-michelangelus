@@ -21,8 +21,8 @@
   "personal_configuration_included": false,
   "files": {
     "README.md": {
-      "bytes": 2496,
-      "sha256": "a4370ebdd7524ce3b546b7bab3c36b1c8da31b8dded0e3e52c889cffaee6d781"
+      "bytes": 2717,
+      "sha256": "56726873e68c6387f5d546fc217f79ddc5ee55a41b60972bec7665b1ed34aaac"
     },
     "LICENSE.txt": {
       "bytes": 1223,
@@ -49,12 +49,12 @@
       "sha256": "de2a922b9bb91363e2062c3d499d8ed296a3d17ea1c0b6794012fcbc52ed0ee6"
     },
     "plugins/patrick-michelangelus/plugin.js": {
-      "bytes": 1279475,
-      "sha256": "9a9bc3675074df5ae2ee0745b905cfdcddc473af2124a5e0f2cfca69d840e853"
+      "bytes": 1279732,
+      "sha256": "498bf3e6388d9001d83592300a70df5777725a4ab73be48ce15a307e20df197a"
     },
     "plugins/pm-session-details/plugin.js": {
-      "bytes": 62872,
-      "sha256": "47c66c85eec8c51d1410d243596c4525d2af87f2ed40d747282976c8e8176491"
+      "bytes": 82503,
+      "sha256": "e0677b93009f5026be615e6468dd5eebc81b4d58aa6d87f7fe6eb85b03a96ddf"
     },
     "plugins/pm-session-navigation/plugin.js": {
       "bytes": 2936,
@@ -63,6 +63,14 @@
     "plugins/pm-radio-podcasts/plugin.js": {
       "bytes": 100092,
       "sha256": "037befd7dbcd2dff07be378e605475eec2401bcd5e31e1e1c69d427916839caa"
+    },
+    "patches/hermes-desktop/README.md": {
+      "bytes": 1399,
+      "sha256": "4f5a3d387c72f51de411f04e961dab7194b5bfd4db11f4c231a7a086698216da"
+    },
+    "patches/hermes-desktop/speed-picker.patch": {
+      "bytes": 24602,
+      "sha256": "169878dcdb8e9bacd5266fb5de6a0534a084d4ec7ee45c94f656056120d7f009"
     }
   }
 }

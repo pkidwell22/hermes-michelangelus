@@ -1,0 +1,661 @@
+diff --git a/apps/desktop/src/app/chat/composer/controls.tsx b/apps/desktop/src/app/chat/composer/controls.tsx
+--- a/apps/desktop/src/app/chat/composer/controls.tsx
++++ b/apps/desktop/src/app/chat/composer/controls.tsx
+@@ -148,7 +148,12 @@
+           {hideModelPill ? null : (
+             <>
+               <ModelPill compact={compactModelPill} disabled={disabled} model={state.model} />
+-              {compactModelPill ? null : <ReasoningPill disabled={disabled} model={state.model} />}
++              {compactModelPill ? null : (
++                <>
++                  <ReasoningPill disabled={disabled} model={state.model} />
++                  {state.model.renderSpeedPill?.(disabled)}
++                </>
++              )}
+             </>
+           )}
+           {voiceControls}
+diff --git a/apps/desktop/src/app/chat/composer/controls.test.tsx b/apps/desktop/src/app/chat/composer/controls.test.tsx
+--- a/apps/desktop/src/app/chat/composer/controls.test.tsx
++++ b/apps/desktop/src/app/chat/composer/controls.test.tsx
+@@ -140,6 +140,32 @@
+   })
+ })
+ 
++describe('composer speed', () => {
++  const stateWithSpeed = {
++    ...state,
++    model: {
++      ...state.model,
++      reasoningMenuContent: <div>Effort menu</div>,
++      renderSpeedPill: (disabled: boolean) => (
++        <button disabled={disabled} type="button">
++          Speed: Standard
++        </button>
++      )
++    }
++  }
++
++  it('places speed immediately after the thinking level', () => {
++    renderControls({ state: stateWithSpeed })
++    expect(screen.getByTestId('reasoning-pill').nextElementSibling?.textContent).toBe('Speed: Standard')
++  })
++
++  it('leaves room for Send in the compact controls row', () => {
++    renderControls({ compactModelPill: true, state: stateWithSpeed })
++    expect(screen.queryByRole('button', { name: 'Speed: Standard' })).toBeNull()
++    expect(screen.getByLabelText('Send')).toBeTruthy()
++  })
++})
++
+ describe('ComposerControls shortcut tooltips', () => {
+   it('labels busy Send with the effective configured action', async () => {
+     renderControls({ busy: true, busyAction: 'steer' })
+diff --git a/apps/desktop/src/app/chat/composer/reasoning-pill.tsx b/apps/desktop/src/app/chat/composer/reasoning-pill.tsx
+--- a/apps/desktop/src/app/chat/composer/reasoning-pill.tsx
++++ b/apps/desktop/src/app/chat/composer/reasoning-pill.tsx
+@@ -17,7 +17,7 @@
+ 
+ import type { ChatBarState } from './types'
+ 
+-const PILL = cn(
++export const COMPOSER_OPTION_PILL = cn(
+   'h-(--composer-control-size) shrink-0 gap-1 rounded-md px-2 text-xs font-normal',
+   'text-(--ui-text-tertiary) hover:bg-(--chrome-action-hover) hover:text-foreground'
+ )
+@@ -76,7 +76,7 @@
+         <DropdownMenuTrigger asChild>
+           <Button
+             aria-label={title}
+-            className={PILL}
++            className={COMPOSER_OPTION_PILL}
+             data-testid="reasoning-pill"
+             disabled={disabled}
+             type="button"
+diff --git a/apps/desktop/src/app/chat/composer/types.ts b/apps/desktop/src/app/chat/composer/types.ts
+--- a/apps/desktop/src/app/chat/composer/types.ts
++++ b/apps/desktop/src/app/chat/composer/types.ts
+@@ -28,6 +28,7 @@
+     modelMenuContent?: ReactNode
+     /** The reasoning pill's dropdown (same host + controller as the model menu). */
+     reasoningMenuContent?: ReactNode
++    renderSpeedPill?: (disabled: boolean) => ReactNode
+     /** False when the catalog says the active model has no reasoning control;
+      *  undefined while unknown (loading) so the pill stays put. */
+     supportsReasoning?: boolean
+diff --git a/apps/desktop/src/app/chat/index.tsx b/apps/desktop/src/app/chat/index.tsx
+--- a/apps/desktop/src/app/chat/index.tsx
++++ b/apps/desktop/src/app/chat/index.tsx
+@@ -97,6 +97,7 @@
+   modelOptionsProfile?: string
+   modelMenuContent?: React.ReactNode
+   reasoningMenuContent?: React.ReactNode
++  renderSpeedPill?: (disabled: boolean) => React.ReactNode
+   requestModelOptionsForOwner?: <T>(method: string, params?: Record<string, unknown>) => Promise<T>
+   onToggleSelectedPin: () => void
+   onDeleteSelectedSession: () => void
+@@ -490,6 +491,7 @@
+   modelOptionsProfile,
+   modelMenuContent,
+   reasoningMenuContent,
++  renderSpeedPill,
+   requestModelOptionsForOwner,
+   onToggleSelectedPin,
+   onDeleteSelectedSession,
+@@ -704,6 +706,7 @@
+     modelOptionsOwnerConnectionId,
+     modelOptionsProfile,
+     reasoningMenuContent,
++    renderSpeedPill,
+     requestModelOptionsForOwner
+   })
+ 
+diff --git a/apps/desktop/src/app/chat/session-tile.tsx b/apps/desktop/src/app/chat/session-tile.tsx
+--- a/apps/desktop/src/app/chat/session-tile.tsx
++++ b/apps/desktop/src/app/chat/session-tile.tsx
+@@ -416,6 +416,30 @@
+     ]
+   )
+ 
++  const renderSpeedPill = useMemo(
++    () =>
++      gatewayOpen
++        ? (speedDisabled: boolean) => (
++            <ReasoningMenuPanel
++              onSelectModel={selectModel}
++              ownerConnectionId={ownerRoute?.connectionId || undefined}
++              profile={ownerRoute?.targetProfile || ownerRoute?.profile || activeGatewayProfile}
++              requestGateway={requestTileGateway}
++              speedDisabled={speedDisabled}
++            />
++          )
++        : undefined,
++    [
++      activeGatewayProfile,
++      gatewayOpen,
++      ownerRoute?.connectionId,
++      ownerRoute?.profile,
++      ownerRoute?.targetProfile,
++      requestTileGateway,
++      selectModel
++    ]
++  )
++
+   return (
+     <SessionViewProvider value={view}>
+       <ComposerScopeProvider value={scope}>
+@@ -449,6 +473,7 @@
+           onToggleSelectedPin={onToggleTilePin}
+           onTranscribeAudio={tileTranscribeAudio}
+           reasoningMenuContent={reasoningMenuContent}
++          renderSpeedPill={renderSpeedPill}
+           requestModelOptionsForOwner={requestTileGateway}
+         />
+       </ComposerScopeProvider>
+diff --git a/apps/desktop/src/app/chat/use-chat-bar-state.ts b/apps/desktop/src/app/chat/use-chat-bar-state.ts
+--- a/apps/desktop/src/app/chat/use-chat-bar-state.ts
++++ b/apps/desktop/src/app/chat/use-chat-bar-state.ts
+@@ -21,6 +21,7 @@
+   modelOptionsOwnerConnectionId?: string
+   modelOptionsProfile?: string
+   reasoningMenuContent?: React.ReactNode
++  renderSpeedPill?: ChatBarState['model']['renderSpeedPill']
+   requestModelOptionsForOwner?: <T>(method: string, params?: Record<string, unknown>) => Promise<T>
+ }
+ 
+@@ -38,6 +39,7 @@
+   modelOptionsOwnerConnectionId,
+   modelOptionsProfile,
+   reasoningMenuContent,
++  renderSpeedPill,
+   requestModelOptionsForOwner
+ }: ChatBarStateOptions): ChatBarState {
+   const modelOptionsQuery = useQuery<ModelOptionsResult>({
+@@ -76,6 +78,7 @@
+         modelMenuContent,
+         quickModels,
+         reasoningMenuContent,
++        renderSpeedPill,
+         supportsFast,
+         supportsReasoning,
+         supportsUltrafast
+@@ -98,6 +101,7 @@
+       modelMenuContent,
+       quickModels,
+       reasoningMenuContent,
++      renderSpeedPill,
+       supportsFast,
+       supportsReasoning,
+       supportsUltrafast
+diff --git a/apps/desktop/src/app/contrib/surfaces.tsx b/apps/desktop/src/app/contrib/surfaces.tsx
+--- a/apps/desktop/src/app/contrib/surfaces.tsx
++++ b/apps/desktop/src/app/contrib/surfaces.tsx
+@@ -164,6 +164,23 @@
+     [actions, activeConnectionId, activeGatewayProfile, gateway, gatewayState]
+   )
+ 
++  const renderSpeedPill = useMemo(
++    () =>
++      gatewayState === 'open'
++        ? (speedDisabled: boolean) => (
++            <ReasoningMenuPanel
++              gateway={gateway || undefined}
++              onSelectModel={actions.selectModel}
++              ownerConnectionId={activeConnectionId || undefined}
++              profile={activeGatewayProfile}
++              requestGateway={actions.requestGateway}
++              speedDisabled={speedDisabled}
++            />
++          )
++        : undefined,
++    [actions, activeConnectionId, activeGatewayProfile, gateway, gatewayState]
++  )
++
+   const chatActions = useMemo(() => latestChatActions(actions), [actions])
+ 
+   const chatView = (
+@@ -174,6 +191,7 @@
+       modelOptionsOwnerConnectionId={activeConnectionId || undefined}
+       modelOptionsProfile={activeGatewayProfile}
+       reasoningMenuContent={reasoningMenuContent}
++      renderSpeedPill={renderSpeedPill}
+       requestModelOptionsForOwner={actions.requestGateway}
+       {...chatActions}
+     />
+diff --git a/apps/desktop/src/app/shell/model-edit-submenu.tsx b/apps/desktop/src/app/shell/model-edit-submenu.tsx
+--- a/apps/desktop/src/app/shell/model-edit-submenu.tsx
++++ b/apps/desktop/src/app/shell/model-edit-submenu.tsx
+@@ -66,6 +66,20 @@
+   }
+ 
+   return { kind: 'none' }
++}
++
++/** Effective choice for the standalone picker, never an inherited unavailable tier. */
++export function composerSpeedTier(fastControl: FastControl, serviceTier: string | undefined, ultrafastSupported: boolean) {
++  if (ultrafastSupported && serviceTier === 'ultrafast') {
++    return 'ultrafast'
++  }
++  if (fastControl.kind === 'variant' && fastControl.on) {
++    return 'fast'
++  }
++  if (fastControl.kind === 'param' && fastControl.canEnable !== false && fastControl.on && serviceTier !== 'ultrafast') {
++    return 'fast'
++  }
++  return 'normal'
+ }
+ 
+ interface ModelEditSubmenuProps {
+@@ -87,6 +101,7 @@
+   /** How fast mode is offered for this model (param toggle vs. variant swap). */
+   fastControl: FastControl
+   serviceTier?: string
++  speedOnly?: boolean
+   ultrafastSupported?: boolean
+   /** Whether this row's model is the active one. */
+   isActive: boolean
+@@ -128,6 +143,7 @@
+   effortWire,
+   fastControl,
+   serviceTier,
++  speedOnly = false,
+   ultrafastSupported = false,
+   isActive,
+   onSelectModel,
+@@ -171,6 +187,47 @@
+       : fastControl.kind === 'variant'
+         ? fastControl.on
+         : fastControl.on && serviceTier !== 'ultrafast'
++
++  if (speedOnly) {
++    const { speed, speedStandard } = t.settings.model
++    const canEnableFast = hasFast && !unsupportedSpeed
++
++    return (
++      <>
++        <DropdownMenuLabel className={dropdownMenuSectionLabel}>{speed}</DropdownMenuLabel>
++        <DropdownMenuRadioGroup
++          onValueChange={value => {
++            if (value === 'fast' && canEnableFast) {
++              setFast(true)
++            } else if (value === 'ultrafast' && ultrafastSupported) {
++              onSetOptions({ serviceTier: 'ultrafast' })
++            } else if (value === 'normal') {
++              if (fastControl.kind === 'variant' && fastControl.on) {
++                setFast(false)
++              } else {
++                onSetOptions({ serviceTier: 'normal' })
++              }
++            }
++          }}
++          value={composerSpeedTier(fastControl, serviceTier, ultrafastSupported)}
++        >
++          <DropdownMenuRadioItem className={dropdownMenuRow} value="normal">
++            {speedStandard}
++          </DropdownMenuRadioItem>
++          {canEnableFast && (
++            <DropdownMenuRadioItem className={dropdownMenuRow} value="fast">
++              {copy.fast}
++            </DropdownMenuRadioItem>
++          )}
++          {ultrafastSupported && (
++            <DropdownMenuRadioItem className={dropdownMenuRow} value="ultrafast">
++              {copy.ultrafast}
++            </DropdownMenuRadioItem>
++          )}
++        </DropdownMenuRadioGroup>
++      </>
++    )
++  }
+ 
+   return !hasFast && !ultrafastSupported && !daybreak && !reasoning ? (
+     <div className="px-2.5 py-3 text-xs text-(--ui-text-tertiary)">{copy.noOptions}</div>
+diff --git a/apps/desktop/src/app/shell/reasoning-menu-panel.tsx b/apps/desktop/src/app/shell/reasoning-menu-panel.tsx
+--- a/apps/desktop/src/app/shell/reasoning-menu-panel.tsx
++++ b/apps/desktop/src/app/shell/reasoning-menu-panel.tsx
+@@ -1,54 +1,70 @@
+ import { useStore } from '@nanostores/react'
++import { type ReactNode, useState } from 'react'
+ 
++import { COMPOSER_OPTION_PILL } from '@/app/chat/composer/reasoning-pill'
+ import { useSessionView } from '@/app/chat/session-view'
+-import { DropdownMenuItem, dropdownMenuRow } from '@/components/ui/dropdown-menu'
++import { Button } from '@/components/ui/button'
++import {
++  DropdownMenu,
++  DropdownMenuContent,
++  DropdownMenuItem,
++  dropdownMenuRow,
++  DropdownMenuTrigger
++} from '@/components/ui/dropdown-menu'
++import { releaseTypingFocus } from '@/components/ui/keyboard-first'
+ import { useI18n } from '@/i18n'
++import { ChevronDown } from '@/lib/icons'
+ import { catalogProviderMatches, currentModelCapabilities } from '@/lib/model-options'
+ 
+-import { ModelOptionsContent, resolveFastControl } from './model-edit-submenu'
++import { composerSpeedTier, ModelOptionsContent, resolveFastControl } from './model-edit-submenu'
+ import { type ModelMenuHostProps, useModelMenuController } from './use-model-menu-controller'
+ 
+-/**
+- * The composer's reasoning menu: the same options rows the catalog shows per
+- * model row (Thinking / Fast / Effort), opened directly for the ACTIVE model
+- * from its own pill. Same controller as the model menu, so an edit here and an
+- * edit in the catalog submenu are one code path — session write, preset,
+- * optimistic store, rollback.
+- */
+-export function ReasoningMenuPanel(props: ModelMenuHostProps) {
++/** Both composer pills reuse the owning chat's model options controller. */
++export function ReasoningMenuPanel({ speedDisabled, ...props }: ModelMenuHostProps & { speedDisabled?: boolean }) {
+   const { t } = useI18n()
+   const view = useSessionView()
+   const currentModel = useStore(view.$model)
+-  const { controller, defaultEffort, modelOptions } = useModelMenuController(props)
++  const { activeSessionId, controller, defaultEffort, modelOptions } = useModelMenuController(props)
+   const { model, provider } = controller.current
+   const caps = currentModelCapabilities(modelOptions.data, provider, model)
++  const speedOnly = speedDisabled !== undefined
+ 
+   if (!model) {
+-    return (
++    return speedOnly ? null : (
+       <DropdownMenuItem className={dropdownMenuRow} disabled>
+         {t.shell.modelOptions.noOptions}
+       </DropdownMenuItem>
+     )
+   }
+ 
+-  // The catalog's provider row is what gates fast; the live model id (which
+-  // may be the `-fast` sibling) decides which way the variant toggle points.
++  // Use the owner catalog; the current model id may be the -fast sibling.
+   const providerModels = modelOptions.data?.providers?.find(p => catalogProviderMatches(p, provider))?.models ?? []
++
++  const fastControl = resolveFastControl(
++    currentModel || model,
++    providerModels,
++    caps?.fast ?? false,
++    controller.current.fast
++  )
++
++  const ultrafastSupported = caps?.ultrafast ?? false
++
++  const canEnableFast =
++    fastControl.kind === 'variant' || (fastControl.kind === 'param' && fastControl.canEnable !== false)
++
++  if (speedOnly && !canEnableFast && !ultrafastSupported) {
++    return null
++  }
+ 
+   const row = { isActive: true, model, provider }
+ 
+-  return (
++  const options = (
+     <ModelOptionsContent
+       canDisableReasoning={caps?.can_disable_reasoning ?? undefined}
+       defaultEffort={defaultEffort}
+       effort={controller.current.effort}
+       effortWire={controller.current.effortWire}
+-      fastControl={resolveFastControl(
+-        currentModel || model,
+-        providerModels,
+-        caps?.fast ?? false,
+-        controller.current.fast
+-      )}
++      fastControl={fastControl}
+       isActive
+       model={model}
+       onSelectModel={nextModel => controller.select(nextModel, provider)}
+@@ -56,7 +72,61 @@
+       provider={provider}
+       reasoning={caps?.reasoning ?? true}
+       serviceTier={controller.current.serviceTier}
+-      ultrafastSupported={caps?.ultrafast ?? false}
++      speedOnly={speedOnly}
++      ultrafastSupported={ultrafastSupported}
+     />
+   )
++
++  if (!speedOnly) {
++    return options
++  }
++
++  const copy = t.shell.modelOptions
++  const settings = t.settings.model
++  const tier = composerSpeedTier(fastControl, controller.current.serviceTier, ultrafastSupported)
++  const label = tier === 'normal' ? settings.speedStandard : copy[tier]
++
++  return (
++    <SpeedDropdown
++      disabled={speedDisabled}
++      key={JSON.stringify([props.ownerConnectionId, props.profile, activeSessionId, provider, model])}
++      title={`${settings.speed}: ${label}`}
++    >
++      {options}
++    </SpeedDropdown>
++  )
+ }
++
++function SpeedDropdown({ children, disabled, title }: { children: ReactNode; disabled: boolean; title: string }) {
++  const [open, setOpen] = useState(false)
++
++  return (
++    <DropdownMenu
++      onOpenChange={next => {
++        setOpen(next)
++
++        if (!next) {
++          releaseTypingFocus()
++        }
++      }}
++      open={open}
++    >
++      <DropdownMenuTrigger asChild>
++        <Button
++          aria-label={title}
++          className={COMPOSER_OPTION_PILL}
++          data-testid="speed-pill"
++          disabled={disabled}
++          type="button"
++          variant="ghost"
++        >
++          <span className="truncate">{title}</span>
++          <ChevronDown className="size-2.5 shrink-0 opacity-50" />
++        </Button>
++      </DropdownMenuTrigger>
++      <DropdownMenuContent align="end" className="w-40 p-0" side="top" sideOffset={8}>
++        {children}
++      </DropdownMenuContent>
++    </DropdownMenu>
++  )
++}
+diff --git a/apps/desktop/src/app/shell/composer-speed.test.tsx b/apps/desktop/src/app/shell/composer-speed.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/apps/desktop/src/app/shell/composer-speed.test.tsx
+@@ -0,0 +1,186 @@
++import type { ModelCapabilities } from '@hermes/shared'
++import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
++import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
++import { afterEach, beforeEach, expect, it, vi } from 'vitest'
++
++import { ComposerControls } from '@/app/chat/composer/controls'
++import { I18nProvider } from '@/i18n'
++import {
++  $activeSessionId,
++  $currentModel,
++  $currentProvider,
++  setCurrentFastMode,
++  setCurrentServiceTier
++} from '@/store/session'
++
++import { ReasoningMenuPanel } from './reasoning-menu-panel'
++
++const model = 'speed-test-model'
++const provider = 'speed-test-provider'
++
++beforeEach(() => {
++  $activeSessionId.set('speed-test-runtime')
++  $currentModel.set(model)
++  $currentProvider.set(provider)
++  setCurrentFastMode(false)
++  setCurrentServiceTier('normal')
++})
++
++afterEach(cleanup)
++
++function mountSpeed(capabilities: ModelCapabilities, models = [model], disabled = false) {
++  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
++
++  const requestGateway = vi.fn(async (method: string) => {
++    if (method === 'model.options') {
++      return { providers: [{ slug: provider, models, capabilities: { [model]: capabilities } }] }
++    }
++
++    if (method === 'config.set') {
++      return { status: 'ok' }
++    }
++    throw new Error(`Unexpected request: ${method}`)
++  })
++
++  const onSelectModel = vi.fn()
++  const noop = () => undefined
++  render(
++    <I18nProvider configClient={null} initialLocale="en">
++      <QueryClientProvider client={queryClient}>
++        <ComposerControls
++          autoSpeak={false}
++          busy={false}
++          busyAction="stop"
++          canSubmit={false}
++          conversation={{
++            active: false,
++            level: 0,
++            muted: false,
++            onEnd: noop,
++            onStart: noop,
++            onStopTurn: noop,
++            onToggleMute: noop,
++            status: 'idle'
++          }}
++          disabled={disabled}
++          hasComposerPayload={false}
++          onDictate={noop}
++          onQueue={noop}
++          onToggleAutoSpeak={noop}
++          state={{
++            model: {
++              canSwitch: true,
++              model,
++              provider,
++              renderSpeedPill: speedDisabled => (
++                <ReasoningMenuPanel
++                  onSelectModel={onSelectModel}
++                  requestGateway={requestGateway as never}
++                  speedDisabled={speedDisabled}
++                />
++              )
++            },
++            tools: { enabled: true, label: 'Add context' },
++            voice: { active: false, enabled: true }
++          }}
++          voiceStatus="idle"
++        />
++      </QueryClientProvider>
++    </I18nProvider>
++  )
++
++  return { onSelectModel, requestGateway }
++}
++
++async function openSpeed(name: string) {
++  const button = await screen.findByRole('button', { name })
++  fireEvent.keyDown(button, { key: 'Enter' })
++
++  return screen.findByRole('menu')
++}
++
++it('toggles the owning session between Standard and Fast without changing reasoning', async () => {
++  const { requestGateway, onSelectModel } = mountSpeed({ fast: true, reasoning: false })
++  await openSpeed('Speed: Standard')
++  expect(screen.getByRole('menuitemradio', { name: 'Standard' }).getAttribute('aria-checked')).toBe('true')
++  expect(screen.queryByRole('menuitemradio', { name: 'Ultrafast' })).toBeNull()
++  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Fast' }))
++  await waitFor(() =>
++    expect(requestGateway).toHaveBeenCalledWith('config.set', {
++      key: 'fast',
++      session_id: 'speed-test-runtime',
++      value: 'fast'
++    })
++  )
++  await openSpeed('Speed: Fast')
++  expect(screen.getByRole('menuitemradio', { name: 'Fast' }).getAttribute('aria-checked')).toBe('true')
++  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Standard' }))
++  await waitFor(() =>
++    expect(requestGateway).toHaveBeenCalledWith('config.set', {
++      key: 'fast',
++      session_id: 'speed-test-runtime',
++      value: 'normal'
++    })
++  )
++  expect(requestGateway.mock.calls.filter(([method]) => method === 'config.set')).toHaveLength(2)
++  expect(onSelectModel).not.toHaveBeenCalled()
++})
++
++it('hides the pill when the route does not offer speed', async () => {
++  const { requestGateway } = mountSpeed({ fast: false, reasoning: true })
++  await act(async () => {
++    await requestGateway.mock.results[0].value
++  })
++  expect(screen.queryByTestId('speed-pill')).toBeNull()
++})
++
++it('does not show Fast on an Ultrafast-only route', async () => {
++  setCurrentFastMode(true)
++  setCurrentServiceTier('ultrafast')
++  mountSpeed({ fast: false, ultrafast: true, reasoning: true })
++  await openSpeed('Speed: Ultrafast')
++  expect(screen.getByRole('menuitemradio', { name: 'Ultrafast' }).getAttribute('aria-checked')).toBe('true')
++  expect(screen.queryByRole('menuitemradio', { name: 'Fast' })).toBeNull()
++})
++
++it('requests Ultrafast rather than ordinary Fast for the current session', async () => {
++  const { requestGateway, onSelectModel } = mountSpeed({ fast: true, ultrafast: true, reasoning: true })
++  await openSpeed('Speed: Standard')
++  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ultrafast' }))
++  await waitFor(() =>
++    expect(requestGateway).toHaveBeenCalledWith('config.set', {
++      key: 'fast',
++      session_id: 'speed-test-runtime',
++      value: 'ultrafast'
++    })
++  )
++  await openSpeed('Speed: Ultrafast')
++  expect(screen.getByRole('menuitemradio', { name: 'Ultrafast' }).getAttribute('aria-checked')).toBe('true')
++  expect(requestGateway.mock.calls.filter(([method]) => method === 'config.set')).toHaveLength(1)
++  expect(onSelectModel).not.toHaveBeenCalled()
++})
++
++it('does not label a fast-only route Ultrafast when the prior model supported it', async () => {
++  setCurrentFastMode(true)
++  setCurrentServiceTier('ultrafast')
++  mountSpeed({ fast: true, reasoning: true })
++  await openSpeed('Speed: Standard')
++  expect(screen.getByRole('menuitemradio', { name: 'Standard' }).getAttribute('aria-checked')).toBe('true')
++  expect(screen.queryByRole('menuitemradio', { name: 'Ultrafast' })).toBeNull()
++})
++
++it('uses the native model switch when Fast is a distinct variant', async () => {
++  const { onSelectModel } = mountSpeed({ fast: false, reasoning: true }, [model, `${model}-fast`])
++  await openSpeed('Speed: Standard')
++  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Fast' }))
++  expect(onSelectModel).toHaveBeenCalledWith({ model: `${model}-fast`, provider, sessionId: 'speed-test-runtime' })
++})
++
++it('remembers a selection in a fresh draft without writing a profile default', async () => {
++  $activeSessionId.set(null)
++  const { requestGateway } = mountSpeed({ fast: true, reasoning: false })
++  await openSpeed('Speed: Standard')
++  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Fast' }))
++  expect(await screen.findByRole('button', { name: 'Speed: Fast' })).toBeTruthy()
++  expect(requestGateway.mock.calls.every(([method]) => method === 'model.options')).toBe(true)
++})
