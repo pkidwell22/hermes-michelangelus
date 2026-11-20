@@ -53,12 +53,12 @@
       "sha256": "498bf3e6388d9001d83592300a70df5777725a4ab73be48ce15a307e20df197a"
     },
     "plugins/pm-session-details/plugin.js": {
-      "bytes": 82503,
-      "sha256": "e0677b93009f5026be615e6468dd5eebc81b4d58aa6d87f7fe6eb85b03a96ddf"
+      "bytes": 85344,
+      "sha256": "3942922fb69bbea21e5847092179d0a5983e21cb766bc08052f901eb473ee30f"
     },
     "plugins/pm-session-navigation/plugin.js": {
-      "bytes": 2936,
-      "sha256": "bba32fd225a3662af3fe18a287a2364b72f5ea3c61ce6888250cbbd60c5c2f1a"
+      "bytes": 5554,
+      "sha256": "5f8d040e771b59e15e7ec924fff1cf958b017ba0c58643e675234299ad04bcee"
     },
     "plugins/pm-radio-podcasts/plugin.js": {
       "bytes": 100092,

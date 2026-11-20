@@ -618,30 +618,60 @@ function legacyRail(ctx, markers, visible, paneOf){
   // order, but let Hermes own its collapsed width, even between paints.
   const verticalRail='[role="tablist"][aria-orientation="vertical"] [data-tree-tab]'
   const minimized=t=>t.matches(`:has(> [data-tree-group] ${verticalRail})`)
+  const flexOf=v=>v.fixed?`0 1 ${v.n}px`:`${v.n} ${v.n} 0px`
+  // The unified layout has no projection outside chat, but Sessions still owes
+  // the user the width they chose. Resolve that one track on demand.
+  const sessionsRow=()=>{const root=document.querySelector(rootSel),t=root&&[...root.children].find(x=>id(x)==='pm-sessions'),v=t&&sizes[id(t)];return t&&v&&Number.isFinite(v.n)&&v.n>0?{t,v}:null}
   const paint=()=>{
     frame=0;if(dead)return
     const m=model();let rules=''
     if(m)for(const [i,t] of m.order.entries()){
       const track=sel(t),v=sizes[id(t)]
       rules+=`${track}{order:${i}!important}\n`
-      if(v&&Number.isFinite(v.n)&&v.n>0){
-        const flex=v.fixed?`0 1 ${v.n}px`:`${v.n} ${v.n} 0px`
-        rules+=`${track}:not(:has(> [data-tree-group] ${verticalRail})){flex:${flex}!important}\n`
-      }
+      if(v&&Number.isFinite(v.n)&&v.n>0)rules+=`${track}:not(:has(> [data-tree-group] ${verticalRail})){flex:${flexOf(v)}!important}\n`
+    }else if(!document.querySelector('[data-layout-edit="true"]')){
+      // Projection inactive: emit the saved Sessions width and nothing else, so
+      // every other track keeps its native inline sizing and no rule duplicates
+      // the chat projection's copy of this same declaration.
+      const row=sessionsRow()
+      if(row)rules+=`${sel(row.t)}:not(:has(> [data-tree-group] ${verticalRail})){flex:${flexOf(row.v)}!important}\n`
     }
     if(css.textContent!==rules)css.textContent=rules
   }
   const schedule=()=>{if(!frame&&!dead)frame=requestAnimationFrame(paint)}
   const remember=e=>{const p=paneOf(e.target);if(p==='workspace'||p?.startsWith('session-tile:')){last=p;lastTarget='';schedule();return}const t=targetOf(e.target);if(isChatTarget(t)){lastTarget=t;last='';schedule()}}
   const seam=e=>{
-    const h=e.target.closest?.('[data-sash-overlap]'),m=model();if(!h||!m||h.parentElement.parentElement!==m.root)return
-    const b=h.parentElement,shown=m.order.filter(t=>t.getBoundingClientRect().width>0),i=shown.indexOf(b),a=shown[i-1]
-    if(!a||minimized(a)||minimized(b))return
+    const h=e.target.closest?.('[data-sash-overlap]');if(!h)return
+    const root=document.querySelector(rootSel);if(!root||h.parentElement?.parentElement!==root||document.querySelector('[data-layout-edit="true"]'))return
+    const m=model(),b=h.parentElement,shown=(m?m.order:[...root.children]).filter(t=>t.getBoundingClientRect().width>0),i=shown.indexOf(b),a=shown[i-1]
+    if(i<0||!a||minimized(a)||minimized(b))return
+    // Without the projection the only seam this rail owns is the one Sessions
+    // itself borders, in displayed order; its neighbor is never re-saved.
+    if(!m){
+      if(id(a)==='pm-sessions')return {h,sessions:a,neighbor:b,direction:1}
+      if(id(b)==='pm-sessions')return {h,sessions:b,neighbor:a,direction:-1}
+      return
+    }
     const next=shown[i+1],browser=id(b)==='pm-right-column'&&next&&!minimized(next)&&next.querySelector('[aria-selected="true"]:is([data-tree-tab="preview"],[data-tree-tab^="preview-tile:"])')?next:null
     const original=m.tracks.filter(t=>shown.includes(t));if(!browser&&original[original.indexOf(b)-1]===a&&!Object.keys(sizes).length)return
     return {h,a,b,shown,browser}
   }
-  const down=e=>{if(e.button!==0||drag)return;const s=seam(e);if(!s)return;e.preventDefault();e.stopPropagation();const tracks=s.shown.filter(t=>!minimized(t)).map(t=>{const c=getComputedStyle(t);return {t,w:t.getBoundingClientRect().width,fixed:parseFloat(c.flexGrow)===0,min:Math.max(64,parseFloat(c.minWidth)||0),max:parseFloat(c.maxWidth)||Infinity}}),a=tracks.find(x=>x.t===s.a),b=tracks.find(x=>x.t===s.b);const start=e.clientX,prior={...sizes};const browser=tracks.find(x=>x.t===s.browser)
+  // Outside chat the seam still moves, but only the Sessions entry is written to
+  // the shared saved sizes: the neighbor keeps its native width and geometry.
+  const plainDown=(e,s)=>{
+    const ca=getComputedStyle(s.sessions),cb=getComputedStyle(s.neighbor),a=s.sessions.getBoundingClientRect().width,b=s.neighbor.getBoundingClientRect().width
+    const min=Math.max(64,parseFloat(ca.minWidth)||0),max=parseFloat(ca.maxWidth)||Infinity,bmin=Math.max(64,parseFloat(cb.minWidth)||0),bmax=parseFloat(cb.maxWidth)||Infinity
+    const fixed=parseFloat(ca.flexGrow)===0,start=e.clientX,prior=sizes
+    let moved=false
+    const move=v=>{
+      if(v.pointerId!==e.pointerId)return
+      const delta=s.direction*(v.clientX-start);if(!delta&&!moved)return
+      const d=Math.max(Math.max(min-a,b-bmax),Math.min(Math.min(max-a,b-bmin),delta))
+      if(delta)moved=true
+      sizes={...sizes,['pm-sessions']:{fixed,n:Math.max(1,a+d)}}
+      paint()
+    };const end=v=>{if(v&&v.pointerId!==e.pointerId)return;const cancel=!v||v.type==='pointercancel';if(cancel||!moved)sizes=prior;else save();s.h.removeEventListener('pointermove',move);s.h.removeEventListener('pointerup',end);s.h.removeEventListener('pointercancel',end);s.h.removeEventListener('lostpointercapture',end);drag=null;paint()};drag=end;s.h.setPointerCapture(e.pointerId);s.h.addEventListener('pointermove',move);s.h.addEventListener('pointerup',end);s.h.addEventListener('pointercancel',end);s.h.addEventListener('lostpointercapture',end)}
+  const down=e=>{if(e.button!==0||drag)return;const s=seam(e);if(!s)return;e.preventDefault();e.stopPropagation();if(s.sessions)return plainDown(e,s);const tracks=s.shown.filter(t=>!minimized(t)).map(t=>{const c=getComputedStyle(t);return {t,w:t.getBoundingClientRect().width,fixed:parseFloat(c.flexGrow)===0,min:Math.max(64,parseFloat(c.minWidth)||0),max:parseFloat(c.maxWidth)||Infinity}}),a=tracks.find(x=>x.t===s.a),b=tracks.find(x=>x.t===s.b);const start=e.clientX,prior={...sizes};const browser=tracks.find(x=>x.t===s.browser)
     const move=v=>{
       if(v.pointerId!==e.pointerId)return
       const delta=v.clientX-start
@@ -651,7 +681,7 @@ function legacyRail(ctx, markers, visible, paneOf){
       for(const x of tracks)sizes[id(x.t)]={fixed:x.fixed,n:Math.max(1,x.w+(x===a?d-spill:x===b?-d:x===browser?spill:0))}
       paint()
     };const end=v=>{if(v&&v.pointerId!==e.pointerId)return;const cancel=!v||v.type==='pointercancel';if(cancel)sizes=prior;else save();s.h.removeEventListener('pointermove',move);s.h.removeEventListener('pointerup',end);s.h.removeEventListener('pointercancel',end);s.h.removeEventListener('lostpointercapture',end);drag=null;schedule()};drag=end;s.h.setPointerCapture(e.pointerId);s.h.addEventListener('pointermove',move);s.h.addEventListener('pointerup',end);s.h.addEventListener('pointercancel',end);s.h.addEventListener('lostpointercapture',end)}
-  const reset=e=>{if(!seam(e))return;e.preventDefault();e.stopPropagation();sizes={};save();paint()}
+  const reset=e=>{const s=seam(e);if(!s)return;e.preventDefault();e.stopPropagation();if(s.sessions){delete sizes['pm-sessions']}else sizes={};save();paint()}
   const observer=new MutationObserver(changes=>{if(changes.some(x=>x.type==='attributes'||[...x.addedNodes,...x.removedNodes].some(n=>n.nodeType===1&&(n.matches?.('[data-tree-split],[data-tree-group],[data-pane-id]')||n.querySelector?.('[data-tree-split],[data-tree-group],[data-pane-id]')))))schedule()});observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-pane-hidden','inert','hidden']});observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-pm-session-chat','data-layout-edit']})
   document.addEventListener('focusin',remember,true);document.addEventListener('pointerdown',remember,true);document.addEventListener('pointerdown',down,true);document.addEventListener('dblclick',reset,true);window.addEventListener('resize',schedule);const stop=host.state.focusedStoredSessionId?.listen(()=>{last='';lastTarget='';schedule()});schedule()
   ctx.onDispose(()=>{dead=true;drag?.();observer.disconnect();stop?.();cancelAnimationFrame(frame);css.remove();document.removeEventListener('focusin',remember,true);document.removeEventListener('pointerdown',remember,true);document.removeEventListener('pointerdown',down,true);document.removeEventListener('dblclick',reset,true);window.removeEventListener('resize',schedule)})
