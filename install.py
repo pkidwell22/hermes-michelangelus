@@ -11,9 +11,18 @@ import uuid
 
 PACKAGE = Path(__file__).resolve().parent
 PLUGINS = {'theme': 'patrick-michelangelus', 'sidebar': 'pm-session-details',
-           'navigation': 'pm-session-navigation', 'radio': 'pm-radio-podcasts'}
-MODES = {'theme': ['theme'], 'full': ['theme', 'sidebar', 'navigation'],
-         'media': ['theme', 'sidebar', 'navigation', 'radio']}
+           'navigation': 'pm-session-navigation', 'settings': 'pm-settings-frost',
+           'clarify': 'pm-clarify-quick-pick', 'catalogue': 'pm-artifact-catalogue',
+           'browser': 'pm-browser-library', 'radio': 'pm-radio-podcasts'}
+# theme/full/media keep their historical names. full and media now also carry
+# the two small visual companions (Settings frost, one-click clarify); the
+# catalogue and browser library stay opt-in because both need recipient data
+# (catalogue.json / a Chrome export) before they show anything.
+MODES = {'theme': ['theme'],
+         'full': ['theme', 'sidebar', 'navigation', 'settings', 'clarify'],
+         'media': ['theme', 'sidebar', 'navigation', 'settings', 'clarify', 'radio'],
+         'catalogue': ['catalogue'],
+         'browser': ['browser']}
 STATE = '.michelangelus-share/install-state.json'
 
 def digest(data):

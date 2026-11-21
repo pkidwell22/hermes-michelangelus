@@ -23,7 +23,7 @@ const CSS = `
 .pm-details .pd-tabs{display:flex;align-items:center;gap:2px;min-width:0;height:28px;flex:none}
 .pm-details .pd-tab{display:inline-flex;align-items:center;justify-content:center;height:28px;white-space:nowrap;padding:0 4px;border-radius:5px;color:var(--ui-text-tertiary,#999);-webkit-app-region:no-drag}
 .pm-details .pd-tab[aria-selected="true"]{color:var(--ui-text-primary,#eee);background:color-mix(in srgb,var(--ui-text-primary,#eee) 6%,transparent)}
-.pm-details:has(.pm-workspace-tools:is([data-folded="true"],[data-view="files"]))>.pd-scroll-body{display:none!important}
+.pm-details:has(.pm-workspace-tools:is([data-folded="true"],[data-view="files"],[data-view="terminal"]))>.pd-scroll-body{display:none!important}
 /* Only the recognized unified island is projected. The native tree, pane DOM,
    handlers and saved weights remain owned by Hermes; no pane is copied/moved. */
 :root[data-pm-sidebar-ready="true"] [data-tree-split="pm-right-column"] {
@@ -37,14 +37,20 @@ const CSS = `
 }
 :root[data-pm-sidebar-ready="true"][data-pm-sidebar-rows="2"] [data-tree-split="pm-right-column"]{--pd-sidebar-header:82px}
 :root[data-pm-sidebar-ready="true"] [data-tree-group="pm-details-group"]>[data-panel-header]{height:0!important;min-height:0!important;padding:0!important;border:0!important;overflow:hidden!important}
-:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="workspace"],[data-pm-sidebar-folded="true"]) [data-tree-split="pm-right-column"] > div:has(> :is([data-tree-group="pm-files-group"],[data-tree-group="pm-review-group"]):not([data-pane-host])){display:none!important}
+:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="workspace"],[data-pm-sidebar-view="terminal"],[data-pm-sidebar-folded="true"]) [data-tree-split="pm-right-column"] > div:has(> :is([data-tree-group="pm-files-group"],[data-tree-group="pm-review-group"]):not([data-pane-host])){display:none!important}
 :root[data-pm-sidebar-ready="true"][data-pm-sidebar-view="files"][data-pm-sidebar-folded="false"] [data-tree-split="pm-right-column"] {
   & > div:has(> :is([data-tree-group="pm-files-group"],[data-tree-group="pm-review-group"]):not([data-pane-host])){flex:1 1 0px!important;min-height:0!important;overflow:hidden}
 }
-:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="files"],[data-pm-sidebar-folded="true"]) [data-tree-split="pm-right-column"] > div:has(> [data-tree-group="pm-details-group"]:not([data-pane-host])){flex:0 0 var(--pd-sidebar-header)!important;min-height:0!important}
+:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="files"],[data-pm-sidebar-view="terminal"],[data-pm-sidebar-folded="true"]) [data-tree-split="pm-right-column"] > div:has(> [data-tree-group="pm-details-group"]:not([data-pane-host])){flex:0 0 var(--pd-sidebar-header)!important;min-height:0!important}
 /* Separate native keep-alive hosts are siblings of the tree, not its children. */
-:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="workspace"],[data-pm-sidebar-folded="true"]) :is([data-pane-host="files"][data-tree-group="pm-files-group"],[data-pane-host="review"][data-tree-group="pm-review-group"]){display:none!important}
-:root[data-pm-session-chat="true"][data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="files"],[data-pm-sidebar-folded="true"]) [data-pm-native-control]{visibility:hidden!important;pointer-events:none!important}
+:root[data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="workspace"],[data-pm-sidebar-view="terminal"],[data-pm-sidebar-folded="true"]) :is([data-pane-host="files"][data-tree-group="pm-files-group"],[data-pane-host="review"][data-tree-group="pm-review-group"]){display:none!important}
+:root[data-pm-session-chat="true"][data-pm-sidebar-ready="true"]:is([data-pm-sidebar-view="files"],[data-pm-sidebar-view="terminal"],[data-pm-sidebar-folded="true"]) [data-pm-native-control]{visibility:hidden!important;pointer-events:none!important}
+/* The terminal slot is native and stays mounted. Only the docked track and
+   its root-level xterm overlay are hidden while another sidebar view is up. */
+:root[data-pm-sidebar-terminal="true"] [data-tree-split="pm-right-column"] > div:has(> [data-pm-terminal-dock]){flex:1 1 0px!important;min-height:0!important}
+:root[data-pm-sidebar-terminal="true"] [data-pm-terminal-dock] > [data-panel-header]{display:none}
+:root[data-pm-sidebar-terminal="true"]:is(:not([data-pm-sidebar-view="terminal"]),[data-pm-sidebar-folded="true"]) :is([data-tree-split="pm-right-column"] > div:has(> [data-pm-terminal-dock]),[data-pane-host="terminal"],[data-persistent-terminal]){display:none!important}
+:root[data-pm-session-chat="true"][data-pm-sidebar-terminal="true"] :is(.pm-details .pd-terminal-launcher,[data-pm-native-control="terminal"]){display:none!important}
 /* One combined view has one native, non-draggable 50/50 seam. Prevent saved
    sash weights and minimums from changing either half of this projection. */
 :root[data-pm-sidebar-ready="true"] [data-tree-split="pm-right-column"] > div > [data-sash-overlap]{display:none!important}
@@ -218,11 +224,12 @@ function ControlsPanel(){
 }
 const unifiedLayout={type:'split',id:'pm-unified-root',orientation:'row',weights:[.18,.60,.22],children:[
   {type:'group',id:'pm-sessions',panes:['sessions'],active:'sessions'},
-  {type:'group',id:'pm-workspace',panes:['workspace','preview','terminal'],active:'workspace'},
-  {type:'split',id:'pm-right-column',orientation:'column',weights:[.62,.17,.17,.38],children:[
+  {type:'group',id:'pm-workspace',panes:['workspace','preview'],active:'workspace'},
+  {type:'split',id:'pm-right-column',orientation:'column',weights:[.62,.17,.17,.38,.38],children:[
     {type:'group',id:'pm-details-group',panes:[`${ID}:panel`],active:`${ID}:panel`},
     {type:'group',id:'pm-files-group',panes:['files'],active:'files',minimized:true},
     {type:'group',id:'pm-review-group',panes:['review'],active:'review',minimized:true},
+    {type:'group',id:'pm-terminal-group',panes:['terminal'],active:'terminal',minimized:true},
     {type:'group',id:'pm-controls-group',panes:[`${ID}:controls`],active:`${ID}:controls`}
   ]}
 ]}
@@ -288,25 +295,46 @@ function useRowVisibility(ref,active=true){
   return visible
 }
 const sidebarStates=new Map()
+const sidebarTabs=[['workspace','Workspace'],['files','Files & Review'],['terminal','Terminal']]
 function sidebarGroups(){
   const split=document.querySelector('[data-tree-split="pm-right-column"]')
   if(!split||!split.closest('[data-tree-split="pm-unified-root"]'))return null
   const groups=['pm-details-group','pm-files-group','pm-review-group','pm-controls-group'].map(id=>[...split.children].map(track=>track.querySelector(`:scope > [data-tree-group="${id}"]:not([data-pane-host])`)).find(Boolean))
-  return groups.every(Boolean)?{split,groups}:null
+  if(!groups.every(Boolean))return null
+  const hostGroup=document.querySelector('[data-pane-host="terminal"]')?.dataset.treeGroup
+  const terminal=[...split.children].map(track=>track.querySelector(':scope > [data-tree-group]:not([data-pane-host])'))
+    .find(group=>group&&!groups.includes(group)&&(group.dataset.treeGroup===hostGroup||group.dataset.treeGroup==='pm-terminal-group'||group.querySelector('[data-tree-tab="terminal"]')))
+  return {split,groups,terminal:terminal??null}
 }
 function WorkspaceTools({active,scope}) {
-  const [state,setState]=useState(()=>sidebarStates.get(scope)||{view:'workspace',workspace:false,files:false})
-  const view=state.view,folded=state[view],label=view==='files'?'Files & Review':'Workspace'
-  const action=`${folded?'Expand':'Collapse'} ${label}`
+  const [state,setState]=useState(()=>sidebarStates.get(scope)||{view:'workspace',workspace:false,files:false,terminal:false})
+  const ref=useRef(null),visible=useRowVisibility(ref,active),[base,setBase]=useState(null)
+  const terminalVisibility=host.paneVisibility('terminal')
+  const terminalOpen=useValue(terminalVisibility),terminalReady=Boolean(active&&base?.terminal)
+  const view=terminalReady&&terminalOpen?'terminal':state.view,folded=state[view]??false
+  const action=`${folded?'Expand':'Collapse'} ${sidebarTabs.find(([id])=>id===view)[1]}`
   const update=fn=>setState(previous=>{const next=fn(previous);sidebarStates.delete(scope);sidebarStates.set(scope,next);if(sidebarStates.size>64)sidebarStates.delete(sidebarStates.keys().next().value);return next})
-  const select=view=>{
+  const focusTerminal=()=>requestAnimationFrame(()=>{
+    if(!ref.current?.isConnected||ref.current.dataset.view!=='terminal'||ref.current.dataset.folded==='true')return
+    document.querySelector('[data-persistent-terminal]:not([aria-hidden="true"]) [data-interactive-terminal]:not(.invisible) .xterm-helper-textarea')?.focus()
+  })
+  const select=next=>{
+    if(next==='terminal'&&!terminalReady)return
+    if(terminalReady&&(next==='terminal')!==terminalVisibility.get())document.querySelector(nativeSelector.terminal)?.click()
+    if(next==='terminal'){
+      update(previous=>({...previous,terminal:false}))
+      focusTerminal()
+      return
+    }
     // This is the host's real native reveal, including dismissal/minimize state.
     // Never replace the file tree with another filesystem or RPC implementation.
-    if(view==='files'&&sidebarGroups()){host.revealPane?.('files');host.revealPane?.('review')}
-    update(previous=>({...previous,view}))
+    if(next==='files'&&sidebarGroups()){host.revealPane?.('files');host.revealPane?.('review')}
+    update(previous=>({...previous,view:next}))
   }
-  const toggle=()=>update(previous=>({...previous,[previous.view]:!previous[previous.view]}))
-  const ref=useRef(null),visible=useRowVisibility(ref,active),[base,setBase]=useState(null)
+  const toggle=()=>{
+    update(previous=>({...previous,[view]:!previous[view]}))
+    if(view==='terminal'&&folded)focusTerminal()
+  }
   useLayoutEffect(()=>{
     if(!active)return
     const container=ref.current?.closest('.pm-details')
@@ -320,7 +348,8 @@ function WorkspaceTools({active,scope}) {
       // actions. Do not force child visibility; parent icon removals survive.
       const tools=cluster?.getBoundingClientRect().width||0
       const rows=r.width<(tabs?.getBoundingClientRect().width||0)+(fold?.getBoundingClientRect().width||24)+tools+12?2:1
-      const next={x:r.left,y:r.top,w:r.width,tools,rows,ready:!!sidebarGroups()}
+      const sidebar=sidebarGroups()
+      const next={x:r.left,y:r.top,w:r.width,tools,rows,ready:!!sidebar,terminal:sidebar?.terminal?.dataset.treeGroup??null}
       setBase(old=>JSON.stringify(old)===JSON.stringify(next)?old:next)
     }
     const resize=new ResizeObserver(measure);resize.observe(ref.current);resize.observe(container);if(cluster)resize.observe(cluster)
@@ -337,25 +366,35 @@ function WorkspaceTools({active,scope}) {
   useLayoutEffect(()=>{
     const root=document.documentElement,ready=active&&base?.ready
     root.setAttribute('data-pm-sidebar-ready',String(!!ready))
+    root.setAttribute('data-pm-sidebar-terminal',String(terminalReady))
     root.setAttribute('data-pm-sidebar-view',view);root.setAttribute('data-pm-sidebar-folded',String(folded));root.setAttribute('data-pm-sidebar-rows',String(base?.rows||2))
-    return()=>{['ready','view','folded','rows'].forEach(key=>root.removeAttribute(`data-pm-sidebar-${key}`))}
-  },[active,base?.ready,base?.rows,view,folded])
+    return()=>{['ready','terminal','view','folded','rows'].forEach(key=>root.removeAttribute(`data-pm-sidebar-${key}`))}
+  },[active,base?.ready,base?.rows,view,folded,terminalReady])
+  useLayoutEffect(()=>{
+    if(!terminalReady)return
+    const group=sidebarGroups()?.terminal
+    if(!group)return
+    const attrs={'data-pm-terminal-dock':'',id:'pm-sidebar-terminal-body',role:'tabpanel','aria-labelledby':'pm-sidebar-terminal-tab'}
+    const previous=Object.fromEntries(Object.keys(attrs).map(key=>[key,group.getAttribute(key)]))
+    for(const [key,value] of Object.entries(attrs))group.setAttribute(key,value)
+    return()=>{for(const [key,value] of Object.entries(previous)){if(value===null)group.removeAttribute(key);else group.setAttribute(key,value)}}
+  },[base?.terminal,terminalReady])
   const selector=':root:not([data-pm-session-chat="false"]):has(.pm-workspace-tools[data-active="true"]) [data-titlebar-cluster="right"]'
   const css=active&&base?`
 ${selector}{position:fixed;inset:auto;left:${base.x+base.w-base.tools}px;top:${base.y+(base.rows===2?28:0)}px;width:max-content;height:28px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;padding:0;gap:0;translate:none;z-index:70;transform:none;visibility:${visible?'visible':'hidden'}!important;pointer-events:none!important;}
 ${selector}>*{pointer-events:${visible?'auto':'none'}!important;}`:''
   const keydown=event=>{
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return
-    event.preventDefault();const next=event.key==='Home'?'workspace':event.key==='End'?'files':view==='workspace'?'files':'workspace'
-    if(next==='files'&&!base?.ready)return
-    select(next);ref.current?.querySelector(`[data-sidebar-tab="${next}"]`)?.focus()
+    const tabs=[...event.currentTarget.querySelectorAll('[role="tab"]:not(:disabled)')]
+    const at=Math.max(0,tabs.indexOf(event.target))
+    const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(at+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length
+    event.preventDefault();tabs[next]?.focus()
   }
   return jsxs('div',{ref,className:'pm-workspace-tools','data-active':String(active),'data-view':view,'data-folded':String(folded),'data-rows':String(base?.rows||2),children:[
     jsx('button',{type:'button',className:'pd-fold pd-muted',title:action,'aria-label':action,'aria-expanded':!folded,onClick:toggle,children:jsx('svg',{'aria-hidden':true,width:12,height:12,viewBox:'0 0 16 16',children:jsx('path',{d:folded?'M6 3.5 10.5 8 6 12.5':'M3.5 6 8 10.5 12.5 6',fill:'none',stroke:'currentColor',strokeWidth:1.5,strokeLinecap:'round',strokeLinejoin:'round'})})}),
-    jsxs('div',{className:'pd-tabs',role:'tablist','aria-label':'Sidebar view',onKeyDown:keydown,children:[
-      jsx('button',{type:'button',className:'pd-tab',role:'tab',id:'pm-sidebar-workspace-tab','data-sidebar-tab':'workspace','aria-controls':'pm-sidebar-workspace-body','aria-selected':view==='workspace',tabIndex:view==='workspace'?0:-1,onClick:()=>select('workspace'),children:'Workspace'}),
-      jsx('button',{type:'button',className:'pd-tab',role:'tab','data-sidebar-tab':'files','aria-selected':view==='files',tabIndex:view==='files'?0:-1,disabled:!base?.ready,onClick:()=>select('files'),children:'Files & Review'})
-    ]}),jsx('style',{children:css})
+    jsx('div',{className:'pd-tabs',role:'tablist','aria-label':'Sidebar view',onKeyDown:keydown,children:sidebarTabs.filter(([id])=>id!=='terminal'||terminalReady).map(([id,label])=>
+      jsx('button',{type:'button',className:'pd-tab',role:'tab',id:`pm-sidebar-${id}-tab`,'data-sidebar-tab':id,'aria-controls':id==='files'?undefined:`pm-sidebar-${id}-body`,'aria-selected':view===id,tabIndex:view===id?0:-1,disabled:id==='files'&&!base?.ready,onClick:()=>select(id),children:label},id)
+    )}),jsx('style',{children:css})
   ]})
 }
 const nativeSelector={
@@ -418,7 +457,7 @@ function NativeSlot({kind,fallback,height=30,onAvailability}){
 function Performance({sid,owner,scope,current,busy}){
   const liveUsage=useValue(host.state.focusedUsage),client=useQueryClient(),enabled=!!sid&&!!owner
   const usage=useQuery({queryKey:[ID,scope,'usage'],queryFn:()=>requestOwned(owner,'session.usage',{session_id:sid},undefined,current),enabled,retry:false,staleTime:0,refetchInterval:busy?5000:false,refetchOnWindowFocus:false})
-  useEffect(()=>{if(enabled)void client.invalidateQueries({queryKey:[ID,scope,'usage']})},[liveUsage,busy,scope,enabled,client])
+  useEffect(()=>{if(enabled)void client.invalidateQueries({queryKey:[ID,scope,'usage']})},[busy,scope,enabled,client])
   useEffect(()=>{
     const tagged=new Set()
     const sync=()=>document.querySelectorAll('[data-slot="statusbar"]>div:last-child>div:has(>svg:is(.lucide-zap,.tabler-icon-bolt)),[data-slot="statusbar"]>div:last-child>div:has(>svg:is(.lucide-layers,.tabler-icon-layers-intersect-2))').forEach(node=>{node.setAttribute('data-pm-performance-duplicate','');tagged.add(node)})
@@ -571,7 +610,7 @@ function DetailsPanel({sid,owner,lifecycle}) {
     jsx(AudioSection,{}),
     jsx(Performance,{sid,owner,scope,current,busy}),
     jsx(Environment,{owner}),
-    jsx('section',{className:'pd-section',children:[jsx('h2',{children:'Terminal'}),jsx(NativeSlot,{kind:'terminal',fallback:'Native terminal control not available.'})]}),
+    jsx('section',{className:'pd-section pd-terminal-launcher',children:[jsx('h2',{children:'Terminal'}),jsx(NativeSlot,{kind:'terminal',fallback:'Native terminal control not available.'})]}),
     jsxs(InlineInventory,{title:'Connectors',icon:'server',detail:enabled&&servers.data?`${serverRows.length} MCP`:'Not reported',children:[jsx('p',{children:'MCP servers for the focused chat owner. This is not the full connector catalogue.'}),...(enabled?serverRows:[]).map((server,index)=>jsx('div',{children:typeof server==='string'?server:server.name||server.id||'MCP server'},index)),!serverRows.length&&jsx('p',{children:servers.isError?'MCP inventory unavailable.':'No MCP inventory reported.'}),jsx('button',{className:'pd-secondary',onClick:nav('/capabilities?tab=connectors'),children:'Open full connector management ↗'})]}),
     jsxs(InlineInventory,{title:'Outputs',icon:'output',detail:'Not linked',children:[jsx('p',{children:'Current-session output inventory is not connected to this sidebar.'}),jsx('button',{className:'pd-secondary',onClick:nav('/artifacts'),children:'Open full artifact library (all sessions) ↗'})]}),
     jsxs(InlineInventory,{title:'Servers',icon:'server',detail:'Not reported',children:[jsx('p',{children:'Development-server inventory is not available in this sidebar.'}),jsx('button',{className:'pd-secondary',onClick:nav('/command-center?section=system'),children:'Open full system tools ↗'})]})

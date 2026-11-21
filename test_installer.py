@@ -30,6 +30,10 @@ def main():
         temp = Path(directory)
         theme_rel = 'desktop-plugins/patrick-michelangelus/plugin.js'
         side_rel = 'desktop-plugins/pm-session-details/plugin.js'
+        settings_rel = 'desktop-plugins/pm-settings-frost/plugin.js'
+        clarify_rel = 'desktop-plugins/pm-clarify-quick-pick/plugin.js'
+        catalogue_rel = 'desktop-plugins/pm-artifact-catalogue/plugin.js'
+        browser_rel = 'desktop-plugins/pm-browser-library/plugin.js'
         full = temp / 'full'
         full.mkdir()
         for name in ['config.yaml', 'state.db', 'memories/USER.md', 'cron/jobs.json']:
@@ -37,7 +41,9 @@ def main():
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(b'unchanged fixture')
         run('install', '--hermes-home', full, '--mode', 'full')
-        assert (full / theme_rel).is_file() and (full / side_rel).is_file()
+        for relative in [theme_rel, side_rel, settings_rel, clarify_rel]:
+            assert (full / relative).is_file(), relative
+        assert not (full / catalogue_rel).exists() and not (full / browser_rel).exists()
         run('verify', '--hermes-home', full)
         first_state = (full / '.michelangelus-share/install-state.json').read_bytes()
         run('install', '--hermes-home', full, '--mode', 'full')
@@ -46,24 +52,36 @@ def main():
             assert (full / name).read_bytes() == b'unchanged fixture'
         record('Full install, readback verification, idempotency and unrelated-data preservation')
         run('uninstall', '--hermes-home', full)
-        assert not (full / theme_rel).exists() and not (full / side_rel).exists()
+        for relative in [theme_rel, side_rel, settings_rel, clarify_rel]:
+            assert not (full / relative).exists(), relative
         assert (full / 'config.yaml').read_bytes() == b'unchanged fixture'
         record('Fresh full installation removes only owned plugin files')
 
         theme = temp / 'theme'
         run('install', '--hermes-home', theme, '--mode', 'theme')
         assert (theme / theme_rel).is_file() and not (theme / side_rel).exists()
+        legacy_state = json.loads((theme / '.michelangelus-share/install-state.json').read_text())
+        assert set(legacy_state['files']) == {theme_rel}
         run('install', '--hermes-home', theme, '--mode', 'full')
         assert (theme / side_rel).is_file()
+        assert (theme / settings_rel).is_file() and (theme / clarify_rel).is_file()
+        upgraded_state = json.loads((theme / '.michelangelus-share/install-state.json').read_text())
+        # The earlier theme record survives the upgrade, so its original bytes stay restorable.
+        assert upgraded_state['files'][theme_rel] == legacy_state['files'][theme_rel]
         run('uninstall', '--hermes-home', theme)
-        assert not (theme / theme_rel).exists() and not (theme / side_rel).exists()
-        record('Theme-only installation and safe upgrade to full')
+        for relative in [theme_rel, side_rel, settings_rel, clarify_rel]:
+            assert not (theme / relative).exists(), relative
+        record('Theme-only installation and safe in-place upgrade to full (old mode state)')
 
-        # Assert exact payloads for all three modes, and no lingering plugin after removal.
+        # Assert exact payloads for every mode, and no lingering plugin after removal.
         for mode, expected in {
             'theme': {'patrick-michelangelus'},
-            'full': {'patrick-michelangelus', 'pm-session-details', 'pm-session-navigation'},
-            'media': {'patrick-michelangelus', 'pm-session-details', 'pm-session-navigation', 'pm-radio-podcasts'},
+            'full': {'patrick-michelangelus', 'pm-session-details', 'pm-session-navigation',
+                     'pm-settings-frost', 'pm-clarify-quick-pick'},
+            'media': {'patrick-michelangelus', 'pm-session-details', 'pm-session-navigation',
+                      'pm-settings-frost', 'pm-clarify-quick-pick', 'pm-radio-podcasts'},
+            'catalogue': {'pm-artifact-catalogue'},
+            'browser': {'pm-browser-library'},
         }.items():
             root = temp / ('exact-' + mode)
             run('install', '--hermes-home', root, '--mode', mode)
@@ -71,19 +89,34 @@ def main():
             run('verify', '--hermes-home', root)
             run('uninstall', '--hermes-home', root)
             assert not list(root.glob('desktop-plugins/*/plugin.js'))
-        record('Exact payload and clean uninstall for theme, full and media modes')
+        record('Exact payload and clean uninstall for theme, full, media, catalogue and browser modes')
+
+        extras = temp / 'extras'
+        run('install', '--hermes-home', extras, '--mode', 'full')
+        full_state = json.loads((extras / '.michelangelus-share/install-state.json').read_text())
+        run('install', '--hermes-home', extras, '--mode', 'catalogue')
+        run('install', '--hermes-home', extras, '--mode', 'browser')
+        run('verify', '--hermes-home', extras)
+        assert (extras / catalogue_rel).is_file() and (extras / browser_rel).is_file()
+        merged_state = json.loads((extras / '.michelangelus-share/install-state.json').read_text())
+        # Additive opt-ins keep the earlier records instead of rewriting them.
+        assert set(full_state['files']).issubset(merged_state['files'])
+        assert set(merged_state['files']) == set(full_state['files']) | {catalogue_rel, browser_rel}
+        run('uninstall', '--hermes-home', extras)
+        assert not list(extras.glob('desktop-plugins/*/plugin.js'))
+        record('Optional catalogue and browser modes install additively beside full and uninstall cleanly')
 
         previous = temp / 'previous'
-        for relative in [theme_rel, side_rel]:
+        for relative in [theme_rel, side_rel, settings_rel, clarify_rel]:
             p = previous / relative
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(('original ' + relative).encode())
         run('install', '--hermes-home', previous, '--mode', 'full', ok=False)
-        for relative in [theme_rel, side_rel]:
+        for relative in [theme_rel, side_rel, settings_rel, clarify_rel]:
             assert (previous / relative).read_bytes() == ('original ' + relative).encode()
         run('install', '--hermes-home', previous, '--mode', 'full', '--replace')
         run('uninstall', '--hermes-home', previous)
-        for relative in [theme_rel, side_rel]:
+        for relative in [theme_rel, side_rel, settings_rel, clarify_rel]:
             assert (previous / relative).read_bytes() == ('original ' + relative).encode()
         record('Conflict refusal is non-destructive; explicit replacement restores original bytes')
 

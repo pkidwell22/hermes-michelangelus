@@ -1,6 +1,6 @@
 {
   "name": "Michelangelus for Hermes Desktop",
-  "version": "1.1.0-dev",
+  "version": "1.2.0-dev",
   "modes": {
     "theme": [
       "patrick-michelangelus"
@@ -8,21 +8,31 @@
     "full": [
       "patrick-michelangelus",
       "pm-session-details",
-      "pm-session-navigation"
+      "pm-session-navigation",
+      "pm-settings-frost",
+      "pm-clarify-quick-pick"
     ],
     "media": [
       "patrick-michelangelus",
       "pm-session-details",
       "pm-session-navigation",
+      "pm-settings-frost",
+      "pm-clarify-quick-pick",
       "pm-radio-podcasts"
+    ],
+    "catalogue": [
+      "pm-artifact-catalogue"
+    ],
+    "browser": [
+      "pm-browser-library"
     ]
   },
   "font_binaries_included": false,
   "personal_configuration_included": false,
   "files": {
     "README.md": {
-      "bytes": 2717,
-      "sha256": "56726873e68c6387f5d546fc217f79ddc5ee55a41b60972bec7665b1ed34aaac"
+      "bytes": 5178,
+      "sha256": "ce7852cf0ea7f6e4745840334db7b7071eeed4aaee11f2d2fd4bb73926af248a"
     },
     "LICENSE.txt": {
       "bytes": 1223,
@@ -37,28 +47,44 @@
       "sha256": "935d8f2af0c703f9c39517ee57cc4930b19d02d533be930b63f0e82f93614b43"
     },
     "THIRD-PARTY-NOTICES.md": {
-      "bytes": 2714,
-      "sha256": "c7d7da4f53838812f50045bfdd083865eefb3e498f02505c4f31bdb4cd24934e"
+      "bytes": 3753,
+      "sha256": "5c89e55025ccd3625676afd704b3da4ebd4fafe90637ffc3942c475f52fa78cc"
     },
     "install.py": {
-      "bytes": 9060,
-      "sha256": "1214108c2f65c51a23ae5b7c44fa1683258ebe094e24445c1591fb171ccb8c66"
+      "bytes": 9641,
+      "sha256": "67c304d2e0b0b7fb9e122e69abbd54aaea413ebe5e01d235ec80bd18b9efc22a"
     },
     "test_installer.py": {
-      "bytes": 7723,
-      "sha256": "de2a922b9bb91363e2062c3d499d8ed296a3d17ea1c0b6794012fcbc52ed0ee6"
+      "bytes": 10183,
+      "sha256": "5d4c030cdb6f0a30c24945aed73293bcfee10bbf2df57dcfac082ea32c207206"
     },
     "plugins/patrick-michelangelus/plugin.js": {
-      "bytes": 1279732,
-      "sha256": "498bf3e6388d9001d83592300a70df5777725a4ab73be48ce15a307e20df197a"
+      "bytes": 1621384,
+      "sha256": "aa482e6c56f2aa13b03711e8d0c4542dfc5d51cc669bd44155e2ef2d619b225a"
     },
     "plugins/pm-session-details/plugin.js": {
-      "bytes": 85344,
-      "sha256": "3942922fb69bbea21e5847092179d0a5983e21cb766bc08052f901eb473ee30f"
+      "bytes": 88563,
+      "sha256": "cef06cda374764d5fbc26a9b63440d8abf51510c55700fc54a3b8957b72f3d30"
     },
     "plugins/pm-session-navigation/plugin.js": {
-      "bytes": 5554,
-      "sha256": "5f8d040e771b59e15e7ec924fff1cf958b017ba0c58643e675234299ad04bcee"
+      "bytes": 5006,
+      "sha256": "ff3e79fd6a8fa2c3e615aa7b7834deaa29b5c85d8232fe32d9641ec7ac6b51b2"
+    },
+    "plugins/pm-settings-frost/plugin.js": {
+      "bytes": 9599,
+      "sha256": "157e1e69e12c77a3c75e3e16bb200ae40abd845d34351d2014cccd9bf3429c79"
+    },
+    "plugins/pm-clarify-quick-pick/plugin.js": {
+      "bytes": 3394,
+      "sha256": "ed13f9ed856c0ff37f2d608f734cec80d347ffb082d6b3268a3909d325357809"
+    },
+    "plugins/pm-artifact-catalogue/plugin.js": {
+      "bytes": 18570,
+      "sha256": "b74905123940e7187fb36e33485cb3454f2d812b93525d7abfab3fa9e9068b4a"
+    },
+    "plugins/pm-browser-library/plugin.js": {
+      "bytes": 32929,
+      "sha256": "7bcf77a160fab01b3d57dae0bf1f81bfe63fde555e06332dd7ab3773e1211aa3"
     },
     "plugins/pm-radio-podcasts/plugin.js": {
       "bytes": 100092,
